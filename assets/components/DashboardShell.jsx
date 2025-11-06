@@ -66,12 +66,6 @@ const navigation = [
   { name: "Reports", href: "#", icon: ChartPieIcon, current: false },
 ];
 
-const teams = [
-  { id: 1, name: "Heroicons", href: "#", initial: "H", current: false },
-  { id: 2, name: "Tailwind Labs", href: "#", initial: "T", current: false },
-  { id: 3, name: "Workcation", href: "#", initial: "W", current: false },
-];
-
 const userNavigation = [
   { name: "Your profile", href: "#" },
   { name: "Sign out", href: "#" },
@@ -102,7 +96,7 @@ export default function DashboardShell({ children }) {
         >
           <DialogBackdrop
             transition
-            className="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
+            className="fixed inset-0 bg-zinc-900/80 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
             data-oid="jlzpx6s"
           />
 
@@ -136,7 +130,7 @@ export default function DashboardShell({ children }) {
               </TransitionChild>
               {/* Sidebar component, swap this element with another sidebar if you like */}
               <div
-                className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-900 px-6 pb-4 ring-1 ring-white/10"
+                className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-zinc-900 px-6 pb-4 ring-1 ring-white/10"
                 data-oid="giroav6"
               >
                 <div
@@ -170,8 +164,8 @@ export default function DashboardShell({ children }) {
                               href={item.href}
                               className={classNames(
                                 item.current
-                                  ? "bg-gray-800 text-white"
-                                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
+                                  ? "bg-emerald-600 text-white"
+                                  : "text-gray-600 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white",
                                 "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
                               )}
                               data-oid="lfj:u7q"
@@ -188,48 +182,11 @@ export default function DashboardShell({ children }) {
                         ))}
                       </ul>
                     </li>
-                    <li data-oid="63yq-f0">
-                      <div
-                        className="text-xs font-semibold leading-6 text-gray-800"
-                        data-oid="3lx8me:"
-                      >
-                        Your teams
-                      </div>
-                      <ul
-                        role="list"
-                        className="-mx-2 mt-2 space-y-1"
-                        data-oid="b2mkg61"
-                      >
-                        {teams.map((team) => (
-                          <li key={team.name} data-oid="4x21x2v">
-                            <a
-                              href={team.href}
-                              className={classNames(
-                                team.current
-                                  ? "bg-gray-800 text-white"
-                                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
-                                "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
-                              )}
-                              data-oid="fw9z82q"
-                            >
-                              <span
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-[0.625rem] font-medium text-gray-800 group-hover:text-white"
-                                data-oid="hf:kpj6"
-                              >
-                                {team.initial}
-                              </span>
-                              <span className="truncate" data-oid="l_nc66h">
-                                {team.name}
-                              </span>
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
+                    
                     <li className="mt-auto" data-oid="yfv8hlk">
                       <a
                         href="#"
-                        className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-800 hover:bg-gray-800 hover:text-white"
+                        className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-800 hover:bg-zinc-800 hover:text-white"
                         data-oid="a73qlmu"
                       >
                         <Cog6ToothIcon
@@ -253,7 +210,7 @@ export default function DashboardShell({ children }) {
           data-oid="2lop92j"
         >
           <div
-            className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-900 px-6 pb-4"
+            className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-zinc-900 px-6 pb-4"
             data-oid="efpe4fz"
           >
             <div className="flex h-16 shrink-0 items-center" data-oid="673zxdr">
@@ -284,8 +241,8 @@ export default function DashboardShell({ children }) {
                           href={item.href}
                           className={classNames(
                             item.current
-                              ? "bg-gray-800 text-white"
-                              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
+                              ? "bg-emerald-600 text-white"
+                              : "text-gray-600 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white",
                             "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
                           )}
                           data-oid="mchmei0"
@@ -302,48 +259,11 @@ export default function DashboardShell({ children }) {
                     ))}
                   </ul>
                 </li>
-                <li data-oid="jms9_r1">
-                  <div
-                    className="text-xs font-semibold leading-6 text-gray-600 dark:text-gray-400"
-                    data-oid="b5tp:8v"
-                  >
-                    Your teams
-                  </div>
-                  <ul
-                    role="list"
-                    className="-mx-2 mt-2 space-y-1"
-                    data-oid="c-rahhn"
-                  >
-                    {teams.map((team) => (
-                      <li key={team.name} data-oid="0y.reos">
-                        <a
-                          href={team.href}
-                          className={classNames(
-                            team.current
-                              ? "bg-gray-800 text-white"
-                              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
-                            "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
-                          )}
-                          data-oid="6ryc.gs"
-                        >
-                          <span
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[0.625rem] font-medium text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-                            data-oid="hksk_qq"
-                          >
-                            {team.initial}
-                          </span>
-                          <span className="truncate" data-oid="_4c0uk8">
-                            {team.name}
-                          </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
+               
                 <li className="mt-auto" data-oid="0he6ue_">
                   <a
                     href="#"
-                    className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                    className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-600 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white"
                     data-oid="-ugo857"
                   >
                     <Cog6ToothIcon
@@ -361,7 +281,7 @@ export default function DashboardShell({ children }) {
 
         <div className="lg:pl-72 mt-20" data-oid="lbcqr2x">
           <div
-            className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8"
+            className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-zinc-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8"
             data-oid="3amid.4"
           >
             <button
@@ -383,7 +303,7 @@ export default function DashboardShell({ children }) {
             {/* Separator */}
             <div
               aria-hidden="true"
-              className="h-6 w-px bg-gray-900/10 lg:hidden"
+              className="h-6 w-px bg-zinc-900/10 lg:hidden"
               data-oid="0-ftjvb"
             />
 
@@ -415,7 +335,7 @@ export default function DashboardShell({ children }) {
                   name="search"
                   type="search"
                   // placeholder="Search..."
-                  className="rounded h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 dark:text-white dark:bg-slate-900 placeholder:text-gray-800 focus:ring-0 sm:text-sm"
+                  className="rounded h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 dark:text-white dark:bg-zinc-800 placeholder:text-gray-800 focus:ring-0 sm:text-sm"
                   data-oid="np66.x3"
                 />
               </form>
@@ -441,7 +361,7 @@ export default function DashboardShell({ children }) {
                 {/* Separator */}
                 <div
                   aria-hidden="true"
-                  className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
+                  className="hidden lg:block lg:h-6 lg:w-px lg:bg-zinc-900/10"
                   data-oid="sr27q3-"
                 />
 
@@ -457,7 +377,7 @@ export default function DashboardShell({ children }) {
                     <img
                       alt=""
                       src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                      className="h-8 w-8 rounded-full bg-gray-50"
+                      className="h-8 w-8 rounded-full bg-zinc-50"
                       data-oid="ytb0tnv"
                     />
 
@@ -488,7 +408,7 @@ export default function DashboardShell({ children }) {
                       <MenuItem key={item.name} data-oid="dal9y24">
                         <a
                           href={item.href}
-                          className="block px-3 py-1 text-sm leading-6 text-gray-900 data-[focus]:bg-gray-50"
+                          className="block px-3 py-1 text-sm leading-6 text-gray-900 data-[focus]:bg-zinc-50"
                           data-oid="8tv:0p4"
                         >
                           {item.name}

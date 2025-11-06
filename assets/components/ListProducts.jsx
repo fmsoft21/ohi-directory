@@ -154,7 +154,7 @@ const ProductsTable = () => {
   };
 
   return (
-    <Card className="w-11/12 mx-auto mt-10" data-oid="y.qvo25">
+    <Card className="w-11/12 mx-auto mt-10 dark:bg-zinc-900" data-oid="y.qvo25">
       <CardHeader className="flex flex-row" data-oid="-um8bbl">
         <CardTitle data-oid="54xqb8g">Products</CardTitle>
         <Link
@@ -162,7 +162,7 @@ const ProductsTable = () => {
           href="/dashboard/products/add"
           data-oid="9yen0nk"
         >
-          <Button data-oid="33:rv8u">
+          <Button  data-oid="33:rv8u">
             <PlusCircle className="mr-2 h-4 w-4" data-oid="zdp2ibn" />
             Add Product
           </Button>
@@ -171,10 +171,10 @@ const ProductsTable = () => {
       <CardContent data-oid="_9ki271">
         {products.length === 0 ? (
           <div
-            className="flex flex-col items-center justify-center py-10"
+            className="flex flex-col items-center justify-center pb-8"
             data-oid="i0:3k8i"
           >
-            <p className="text-lg text-gray-500" data-oid="6o19spt">
+            <p className="text-lg font-bold text-gray-500" data-oid="6o19spt">
               No products found
             </p>
             <p className="text-sm text-gray-400" data-oid="p98rra8">
@@ -224,10 +224,10 @@ const ProductsTable = () => {
                             data-oid=".yv3q3d"
                           >
                             <Pencil
-                              className="mr-2  h-4 w-4"
+                              className="h-4 w-4"
                               data-oid="oz3-ukl"
-                            />{" "}
-                            Edit
+                            />
+                            
                           </Button>
                         </Link>
                         <AlertDialog data-oid="0roiuht">
@@ -237,8 +237,8 @@ const ProductsTable = () => {
                               size="sm"
                               data-oid="uvrhks0"
                             >
-                              <X className="mr-1 h-4 w-4" data-oid="8_9lp:x" />{" "}
-                              Delete
+                              <X className="h-4 w-4" data-oid="8_9lp:x" />
+                              
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent data-oid="7wc_k.6">

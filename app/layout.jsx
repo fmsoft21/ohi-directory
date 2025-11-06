@@ -12,7 +12,7 @@ import { ThemeProvider } from "next-themes";
 import Footer from "@/assets/components/Footer";
 import AuthProvider from "@/assets/components/authProvider";
 import { Toaster } from "@/components/ui/toaster";
-import Navbar from "@/assets/components/Navbar";
+import Navbar from "@/assets/components/Navbar2";
 
 const poppins = Montserrat({ subsets: ["latin"], weight: "400" });
 
@@ -31,7 +31,7 @@ const MainLayout = ({ children }) => {
       <html suppressHydrationWarning>
         <body suppressHydrationWarning className={poppins.className}>
           <ThemeProvider attribute="class">
-            <Navbar />
+            <Navbar/>
             <div suppressHydrationWarning>{children}</div>
             <Footer />
           </ThemeProvider>
