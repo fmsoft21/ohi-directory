@@ -1,257 +1,165 @@
 "use client";
-import React from "react";
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StarIcon, FilterIcon } from "lucide-react";
+import { MapPin, Phone, Mail, Calendar, Store } from "lucide-react";
+import ProductCard from "@/assets/components/ProductCard";
+import Loading from "@/app/loading";
 
-const StorePage = () => {
-  const [sortOption, setSortOption] = useState("featured");
-  const [itemsPerPage, setItemsPerPage] = useState("12");
+const StoreDetailPage = () => {
+  const { id } = useParams();
+  const [store, setStore] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const products = [
-    {
-      id: 1,
-      name: "SLEEVE BASKETBALL T-SHIRT FOR MEN - B...",
-      price: 68.0,
-      discount: 3,
-      rating: 0,
-      image: "/image.png",
-      reviews: 0,
-    },
-    {
-      id: 2,
-      name: "T-SHIRT WITH GUCCI BLADE PRINT",
-      price: 58.0,
-      discount: 3,
-      rating: 0,
-      image: "/image.png",
-      reviews: 0,
-    },
-    {
-      id: 3,
-      name: 'NIKE AIR JORDAN 4 RETRO "RED METALLIC"',
-      price: 257.0,
-      discount: 1,
-      rating: 0,
-      image: "/image.png",
-      reviews: 0,
-    },
-  ];
+  useEffect(() => {
+    const fetchStoreData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch store details
+        const storeResponse = await fetch(`/api/stores/${id}`);
+        if (!storeResponse.ok) throw new Error('Store not found');
+        const storeData = await storeResponse.json();
+        setStore(storeData);
+
+        // Fetch store products
+        const productsResponse = await fetch(`/api/products/user/${id}`);
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          setProducts(productsData);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchStoreData();
+    }
+  }, [id]);
+
+  if (loading) return <Loading />;
+  if (error) return <div className="mt-20 p-8 text-center text-red-500">{error}</div>;
+  if (!store) return <div className="mt-20 p-8 text-center">Store not found</div>;
 
   return (
-    <div
-      className="min-h-screen bg-zinc-50 dark:bg-zinc-900"
-      data-oid="m6enmg7"
-    >
-      {/* Hero Section */}
-      <div
-        className="relative h-64 bg-gradient-to-r from-zinc-800 to-zinc-900"
-        data-oid="51tuh8m"
-      >
-        <div className="absolute inset-0 bg-black/50" data-oid=":2vnnnu">
-          <div
-            className="max-w-7xl mx-auto px-4 h-full flex flex-col justify-center"
-            data-oid="3x5:98r"
-          >
-            <h1
-              className="text-4xl font-bold text-white mb-2"
-              data-oid="8n5e91z"
-            >
-              Elite Boutique
-            </h1>
-            <div
-              className="flex items-center text-zinc-300 space-x-2"
-              data-oid="4xih9zc"
-            >
-              <Link href="/" className="hover:text-white" data-oid="yko:r0c">
-                Home
-              </Link>
-              <span data-oid="02.eas:">/</span>
-              <Link
-                href="/shops"
-                className="hover:text-white"
-                data-oid="vlsxdjz"
-              >
-                Shops
-              </Link>
-              <span data-oid="_j3dt4-">/</span>
-              <span className="text-white" data-oid="nhpieaz">
-                Elite Boutique
-              </span>
+    <div className="mt-20 min-h-screen bg-gray-50 dark:bg-zinc-900">
+      {/* Store Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            {/* Store Avatar */}
+            <div className="relative w-32 h-32">
+              <Image
+                src={store.image || '/api/placeholder/150/150'}
+                alt={store.storename}
+                fill
+                className="rounded-full border-4 border-white object-cover"
+              />
+            </div>
+
+            {/* Store Info */}
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-4xl font-bold mb-2">{store.storename}</h1>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start text-emerald-100">
+                {store.city && store.province && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    <span>{store.city}, {store.province}</span>
+                  </div>
+                )}
+                {store.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-5 w-5" />
+                    <span>{store.phone}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8" data-oid="49:bbyh">
-        {/* Filters and Sort */}
-        <div
-          className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0"
-          data-oid="mbqfhaf"
-        >
-          <p className="text-zinc-600 dark:text-zinc-400" data-oid="9as.r.:">
-            Showing 1-3 of 3 items
-          </p>
-          <div className="flex space-x-4" data-oid="wx.bnkp">
-            <Button variant="outline" size="icon" data-oid="a0r21kq">
-              <FilterIcon className="h-4 w-4" data-oid="du7iasn" />
-            </Button>
-            <Select
-              value={sortOption}
-              onValueChange={setSortOption}
-              data-oid="m0-ssmf"
-            >
-              <SelectTrigger className="w-[180px]" data-oid="w.n6.-a">
-                <SelectValue placeholder="Sort by" data-oid="bwy:.v1" />
-              </SelectTrigger>
-              <SelectContent data-oid="ac11oy6">
-                <SelectItem value="featured" data-oid="qycqz:s">
-                  Featured
-                </SelectItem>
-                <SelectItem value="newest" data-oid="hlfly4q">
-                  Newest
-                </SelectItem>
-                <SelectItem value="price-low" data-oid="3ot4-so">
-                  Price: Low to High
-                </SelectItem>
-                <SelectItem value="price-high" data-oid="u_.4qif">
-                  Price: High to Low
-                </SelectItem>
-                <SelectItem value="top-rated" data-oid="elb8x:z">
-                  Top Rated
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={itemsPerPage}
-              onValueChange={setItemsPerPage}
-              data-oid=":0lwb2:"
-            >
-              <SelectTrigger className="w-[100px]" data-oid="f0x03en">
-                <SelectValue placeholder="Show" data-oid="21w_9lt" />
-              </SelectTrigger>
-              <SelectContent data-oid="1:a1qu9">
-                <SelectItem value="12" data-oid="q4ywkvx">
-                  Show: 12
-                </SelectItem>
-                <SelectItem value="24" data-oid="qese8lk">
-                  Show: 24
-                </SelectItem>
-                <SelectItem value="36" data-oid="ua1:dz0">
-                  Show: 36
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          data-oid="1vuyz.p"
-        >
-          {products.map((product) => (
-            <Card key={product.id} className="group" data-oid="dpbuccm">
-              <CardHeader className="p-0" data-oid="qptteyr">
-                <div
-                  className="relative aspect-square overflow-hidden rounded-t-lg"
-                  data-oid="9a53pfy"
-                >
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="group-hover:scale-105 transition-transform duration-300"
-                    data-oid="0q5mtxw"
-                  />
-
-                  {product.discount > 0 && (
-                    <Badge
-                      className="absolute top-4 right-4 bg-red-500"
-                      data-oid="_04cdg0"
-                    >
-                      -{product.discount}%
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-4" data-oid="rtkiaa1">
-                <h3
-                  className="font-medium text-lg mb-2 text-zinc-900 dark:text-zinc-100"
-                  data-oid="euaber7"
-                >
-                  {product.name}
-                </h3>
-                <div
-                  className="flex items-center justify-between"
-                  data-oid="e8a8v2v"
-                >
-                  <p
-                    className="text-lg font-bold text-zinc-900 dark:text-zinc-100"
-                    data-oid="yleiqvl"
-                  >
-                    ${product.price.toFixed(2)}
+      {/* Store Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700">
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <Store className="h-5 w-5" />
+                    About Store
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {store.about || 'No description available'}
                   </p>
-                  <div
-                    className="flex items-center space-x-1"
-                    data-oid="kfam6:b"
-                  >
-                    <StarIcon
-                      className="h-4 w-4 text-yellow-400"
-                      data-oid="f21-qpx"
-                    />
+                </div>
 
-                    <span
-                      className="text-sm text-zinc-600 dark:text-zinc-400"
-                      data-oid="8zm-s_8"
-                    >
-                      {product.rating} ({product.reviews})
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-2">Location</h3>
+                  <div className="space-y-2 text-sm">
+                    {store.city && (
+                      <p className="text-muted-foreground">{store.city}</p>
+                    )}
+                    {store.province && (
+                      <p className="text-muted-foreground">{store.province}</p>
+                    )}
+                    {store.zipCode && (
+                      <p className="text-muted-foreground">{store.zipCode}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      Member since {new Date(store.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="p-4 pt-0" data-oid="oe3dgto">
-                <Button className="w-full" data-oid="9:gjx2r">
-                  Add to Cart
-                </Button>
-              </CardFooter>
             </Card>
-          ))}
-        </div>
+          </div>
 
-        {/* Pagination */}
-        <div className="flex justify-center mt-8 space-x-2" data-oid="e_kcdzw">
-          <Button variant="outline" disabled data-oid="h:8rop2">
-            Previous
-          </Button>
-          <Button variant="default" data-oid="jqvy.rq">
-            1
-          </Button>
-          <Button variant="outline" data-oid="91ncqb7">
-            Next
-          </Button>
+          {/* Products Grid */}
+          <div className="lg:col-span-2">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold">
+                Store Products ({products.length})
+              </h2>
+            </div>
+
+            {products.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Store className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-xl font-semibold mb-2">No Products Yet</h3>
+                  <p className="text-muted-foreground">
+                    This store hasn't listed any products yet.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {products.map((product) => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default StorePage;
+export default StoreDetailPage;

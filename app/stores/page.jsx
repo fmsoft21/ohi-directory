@@ -1,61 +1,81 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import StoreCard from "@/assets/components/StoreCard";
+import StoreFilterSort from "@/assets/components/StoreFilterSort";
+import Loading from "@/app/loading";
 import Image from "next/image";
 
 const StoresPage = () => {
-  const [shops, setShops] = useState([
-    {
-      id: 1,
-      name: "Busy Mart",
-      avatar: "/api/placeholder/50/50",
-      likes: 1,
-      totalProducts: 4,
-      isLiked: false,
-    },
-    {
-      id: 2,
-      name: "Luxury Emporium",
-      avatar: "/api/placeholder/50/50",
-      likes: 1,
-      totalProducts: 9,
-      isLiked: false,
-    },
-    {
-      id: 3,
-      name: "Elite Boutique",
-      avatar: "/api/placeholder/50/50",
-      likes: 2,
-      totalProducts: 5,
-      isLiked: false,
-    },
-    {
-      id: 4,
-      name: "Tech & Trend",
-      avatar: "/api/placeholder/50/50",
-      likes: 3,
-      totalProducts: 7,
-      isLiked: false,
-    },
-    {
-      id: 5,
-      name: "Best Cart",
-      avatar: "/api/placeholder/50/50",
-      likes: 4,
-      totalProducts: 6,
-      isLiked: false,
-    },
-    {
-      id: 6,
-      name: "Ad Culpa In Ipsum D",
-      avatar: "/api/placeholder/50/50",
-      likes: 2,
-      totalProducts: 8,
-      isLiked: false,
-    },
-  ]);
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const links = [
+  const fetchStores = async (filters = {}) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (filters.search) params.append('search', filters.search);
+      if (filters.province) params.append('province', filters.province);
+      if (filters.city) params.append('city', filters.city);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+      const response = await fetch(`/api/stores?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch stores');
+      }
+
+      const data = await response.json();
+      setStores(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching stores:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  const handleFilterChange = (filters) => {
+    fetchStores(filters);
+  };
+
+  const handleLike = (storeId) => {
+    setStores(
+      stores.map((store) => {
+        if (store._id === storeId) {
+          return {
+            ...store,
+            likes: store.isLiked ? (store.likes || 0) - 1 : (store.likes || 0) + 1,
+            isLiked: !store.isLiked,
+          };
+        }
+        return store;
+      })
+    );
+  };
+
+  if (loading) return <Loading />;
+
+  if (error) {
+    return (
+      <div className="mt-20 p-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600">Error Loading Stores</h2>
+          <p className="text-gray-600 mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+
+   const links = [
   { name: 'Open roles', href: '#' },
   { name: 'Internship program', href: '#' },
   { name: 'Our values', href: '#' },
@@ -67,31 +87,15 @@ const stats = [
   { name: 'Hours per week', value: '40' },
   { name: 'Paid time off', value: 'Unlimited' },
 ]
-
-  const handleLike = (shopId) => {
-    setShops(
-      shops.map((shop) => {
-        if (shop.id === shopId) {
-          return {
-            ...shop,
-            likes: shop.isLiked ? shop.likes - 1 : shop.likes + 1,
-            isLiked: !shop.isLiked,
-          };
-        }
-        return shop;
-      }),
-    );
-  };
-
   return (
     <>
-    <div className="relative isolate overflow-hidden bg-white dark:bg-zinc-900 py-24 sm:py-20">
+     <div className="relative isolate overflow-hidden bg-white dark:bg-zinc-900 py-24 sm:py-20">
           <Image
             height={1500}
             width={2830}
             alt=""
             src="https://plus.unsplash.com/premium_photo-1677456379788-82ca409e5bfc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=870"
-            className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center opacity-30 dark:opacity-20"
+            className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center opacity-50 dark:opacity-20"
           />
            <div
                 className="h-10 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"
@@ -103,9 +107,9 @@ const stats = [
               ></div>
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl lg:mx-0">
-              <h2 className="text-5xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-7xl">See what others are selling nearby</h2>
+              <h2 className="text-5xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-7xl">Products from Sellers near you</h2>
               <p className="mt-8 text-lg font-medium text-pretty text-gray-700 dark:text-gray-300 sm:text-xl/8">
-                View sellers around you. Find the perfect store that suits your needs and preferences.
+                View our collection of products carefully curated from sellers all around you. Find the perfect item that suits your needs and preferences.
               </p>
             </div>
             <div className="mx-auto mt-10 max-w-2xl lg:mx-0 lg:max-w-none">
@@ -127,37 +131,53 @@ const stats = [
             </div>
           </div>
         </div>
-    
-      <div className="mt-20" data-oid="jhjpda3">
-        <div className="p-8" data-oid="8oxel6r">
-          <div className="text-center mb-8" data-oid="v4xj1xl">
-            <h1
-              className="text-4xl font-bold mb-2 text-foreground"
-              data-oid="y.6g_f0"
-            >
-              All Shops
-            </h1>
-            <p className="text-muted-foreground" data-oid="a4m1nd.">
-              Lorem Ipsum Is Simply Dummy Text Of The Printing And Typesetting
-              Industry.
+    <div className="mt-20">
+      <div className="p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2 text-foreground">
+            All Stores
+          </h1>
+          <p className="text-muted-foreground">
+            Discover local businesses and connect with store owners
+          </p>
+        </div>
+
+        <StoreFilterSort onFilterChange={handleFilterChange} />
+
+        {stores.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-xl text-gray-500">No stores found</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Try adjusting your filters or check back later
             </p>
           </div>
-
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            data-oid="o.-mbi_"
-          >
-            {shops.map((shop) => (
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stores.map((store) => (
               <StoreCard
-                key={shop.id}
-                shop={shop}
+                key={store._id}
+                shop={{
+                  id: store._id,
+                  name: store.storename,
+                  avatar: store.image || '/api/placeholder/50/50',
+                  likes: store.likes || 0,
+                  totalProducts: 0, // You can add product count later
+                  isLiked: store.isLiked || false,
+                  province: store.province,
+                  city: store.city,
+                  about: store.about,
+                }}
                 onLike={handleLike}
-                data-oid="4ajt.02"
               />
             ))}
           </div>
+        )}
+
+        <div className="mt-8 text-center text-sm text-gray-500">
+          Showing {stores.length} store{stores.length !== 1 ? 's' : ''}
         </div>
       </div>
+    </div>
     </>
   );
 };
