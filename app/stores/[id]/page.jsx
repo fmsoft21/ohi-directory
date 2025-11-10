@@ -49,48 +49,47 @@ const StoreDetailPage = () => {
   if (!store) return <div className="mt-20 p-8 text-center">Store not found</div>;
 
   return (
-    <div className="mt-20 min-h-screen bg-gray-50 dark:bg-zinc-900">
-      {/* Store Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* Store Avatar */}
-            <div className="relative w-32 h-32">
-              <Image
-                src={store.image || '/api/placeholder/150/150'}
-                alt={store.storename}
-                fill
-                className="rounded-full border-4 border-white object-cover"
-              />
-            </div>
-
-            {/* Store Info */}
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-4xl font-bold mb-2">{store.storename}</h1>
-              <div className="flex flex-wrap gap-4 justify-center md:justify-start text-emerald-100">
-                {store.city && store.province && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    <span>{store.city}, {store.province}</span>
-                  </div>
-                )}
-                {store.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-5 w-5" />
-                    <span>{store.phone}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
+      {/* Cover image */}
+      <div className="relative w-full h-80 bg-gray-200 dark:bg-zinc-800">
+        <Image
+          src={store.coverImage || '/coverr.jpg'}
+          alt={`${store.storename} cover`}
+          fill
+          className="object-cover opacity-50 dark:opacity-30 "
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 dark:to-black/40" />
       </div>
 
-      {/* Store Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+      {/* Avatar centered and overlapping the cover */}
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="-mt-16 flex flex-col items-center">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 overflow-hidden">
+            <Image
+              src={store.image || '/logo.png'}
+              alt={store.storename}
+              fill
+              className="object-cover"
+            />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mt-4">{store.storename}</h1>
+          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+            {store.city && store.province && (
+              <div className="flex items-center gap-2 text-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>{store.city}, {store.province}</span>
+              </div>
+            )}
+            {store.phone && (
+              <div className="flex items-center gap-2 text-foreground">
+                <Phone className="h-4 w-4" />
+                <span>{store.phone}</span>
+              </div>
+            )}
+          </div>
+
+          {/* About / Details card below */}
+          <div className="w-full md:w-3/4 lg:w-2/3 mt-6">
             <Card className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700">
               <CardContent className="p-6 space-y-4">
                 <div>
@@ -129,33 +128,31 @@ const StoreDetailPage = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
 
-          {/* Products Grid */}
-          <div className="lg:col-span-2">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold">
-                Store Products ({products.length})
-              </h2>
-            </div>
-
-            {products.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Store className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-xl font-semibold mb-2">No Products Yet</h3>
-                  <p className="text-muted-foreground">
-                    This store hasn't listed any products yet.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product._id} product={product} />
-                ))}
-              </div>
-            )}
+        {/* Products section */}
+        <div className="py-8">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-bold">Store Products ({products.length})</h2>
           </div>
+
+          {products.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Store className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-xl font-semibold mb-2">No Products Yet</h3>
+                <p className="text-muted-foreground">
+                  This store hasn't listed any products yet.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

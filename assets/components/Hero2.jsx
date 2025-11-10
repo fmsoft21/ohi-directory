@@ -7,17 +7,17 @@ import { useState } from "react";
 export default function HeroSection() {
   return (
     <>
-      <section className="relative w-full py-14" data-oid="ojxzx24">
+      <section className="relative w-full pb-10 md:py-14" data-oid="ojxzx24">
         <div
-          className="absolute top-0 inset-x-0 h-64 flex items-start"
+          className="absolute top-0 inset-x-0 h-24 flex items-start"
           data-oid="ef2.ell"
         >
           <div
-            className="h-24 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"
+            className="h-4 md:h-24 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"
             data-oid="bjik9br"
           ></div>
           <div
-            className="h-20 w-3/5 bg-gradient-to-r from-emerald-500 opacity-40 blur-2xl dark:from-emerald-500 dark:opacity-40"
+            className="h-6 md:h-20 w-3/5 bg-gradient-to-r from-emerald-500 opacity-40 blur-2xl dark:from-emerald-500 dark:opacity-40"
             data-oid="m4g0puw"
           ></div>
         </div>
@@ -36,11 +36,11 @@ export default function HeroSection() {
             ></div>
           </div>
           <div
-            className="grid lg:grid-cols-2 relative pt-24 lg:max-w-none max-w-2xl md:max-w-3xl mx-auto"
+            className="grid lg:grid-cols-2 relative pt-10 md:pt-24 lg:max-w-none max-w-2xl md:max-w-3xl mx-auto"
           >
             {/* Text on left */}
             <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl lg:flex-shrink-0 lg:pt-8">
-          <div className="mt-24 sm:mt-32 lg:mt-16">
+          <div className="mt-24 lg:mt-0">
             <a href="#" className="inline-flex space-x-6">
               <span className="rounded-full bg-emerald-600/10 px-3 py-1 text-sm font-semibold leading-6 text-emerald-600 ring-1 ring-inset ring-indigo-600/10">
                 What's new
@@ -51,7 +51,7 @@ export default function HeroSection() {
               </span>
             </a>
           </div>
-          <h1 className="mt-10 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-6xl">
+          <h1 className="mt-10 text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-6xl">
             A Central Marketplace <br />for your <br /> Home Business
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">

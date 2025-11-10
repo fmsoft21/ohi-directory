@@ -37,6 +37,9 @@ const UserSchema = new Schema(
     image: {
       type: String,
     },
+    coverImage: {
+      type: String,
+    },
     bookmarks: [
       {
         type: Schema.Types.ObjectId,
