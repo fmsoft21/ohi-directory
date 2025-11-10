@@ -1,6 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
-import StoreCard from "@/assets/components/StoreCard";
+import React, { useState, useEffect } from "react";
 import StoreFilterSort from "@/assets/components/StoreFilterSort";
 import Loading from "@/app/loading";
 import Image from "next/image";
@@ -10,41 +9,30 @@ const StoresPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchStores = useCallback(async (filters = {}) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      if (filters.search) params.append('search', filters.search);
-      if (filters.province) params.append('province', filters.province);
-      if (filters.city) params.append('city', filters.city);
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-
-      const response = await fetch(`/api/stores?${params.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch stores');
-      }
-
-      const data = await response.json();
-      setStores(data);
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-      console.error('Error fetching stores:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Fetch all stores once on mount
   useEffect(() => {
-    fetchStores();
-  }, [fetchStores]);
+    const fetchStores = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/stores');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch stores');
+        }
 
-  const handleFilterChange = useCallback((filters) => {
-    fetchStores(filters);
-  }, [fetchStores]);
+        const data = await response.json();
+        setStores(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching stores:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStores();
+  }, []);
 
   const handleLike = (storeId) => {
     setStores(
@@ -107,7 +95,7 @@ const StoresPage = () => {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl lg:mx-0">
             <h2 className="text-5xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-7xl">
-              Stores from Sellers near you
+              Find Home Stores near you
             </h2>
             <p className="mt-8 text-lg font-medium text-pretty text-gray-700 dark:text-gray-300 sm:text-xl/8">
               Discover local businesses and connect with store owners in your area. Browse through our curated collection of stores.
@@ -143,40 +131,7 @@ const StoresPage = () => {
           </p>
         </div>
 
-        <StoreFilterSort onFilterChange={handleFilterChange} />
-
-        {stores.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-gray-500">No stores found</p>
-            <p className="text-sm text-gray-400 mt-2">
-              Try adjusting your filters or check back later
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stores.map((store) => (
-              <StoreCard
-                key={store._id}
-                shop={{
-                  id: store._id,
-                  name: store.storename,
-                  avatar: store.image || '/api/placeholder/50/50',
-                  likes: store.likes || 0,
-                  totalProducts: 0,
-                  isLiked: store.isLiked || false,
-                  province: store.province,
-                  city: store.city,
-                  about: store.about,
-                }}
-                onLike={handleLike}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="mt-8 text-center text-sm text-gray-500">
-          Showing {stores.length} store{stores.length !== 1 ? 's' : ''}
-        </div>
+        <StoreFilterSort stores={stores} onLike={handleLike} />
       </div>
     </>
   );

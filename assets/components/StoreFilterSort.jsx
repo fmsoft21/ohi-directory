@@ -1,5 +1,5 @@
-"use client";
-import React, { useState, useEffect, useRef } from "react";
+import React from 'react';
+import StoreCard from '@/assets/components/StoreCard';
 
 const provinces = [
   "All Provinces",
@@ -14,50 +14,65 @@ const provinces = [
   "North West"
 ];
 
-const StoreFilterSort = ({ onFilterChange }) => {
-  const [search, setSearch] = useState("");
-  const [province, setProvince] = useState("All Provinces");
-  const [sortBy, setSortBy] = useState("createdAt");
+// Reusable StoreFilterSort component
+// Props:
+// - stores: array of store objects
+// - onLike: function to handle like action
+export default function StoreFilterSort({ stores = [], onLike }) {
+  const [search, setSearch] = React.useState('');
+  const [province, setProvince] = React.useState('All Provinces');
+  const [sortBy, setSortBy] = React.useState('createdAt');
 
-  const mounted = useRef(false);
+  const filteredStores = React.useMemo(() => {
+    if (!stores) return [];
 
-  // Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      if (mounted.current) {
-        onFilterChange({
-          search: search,
-          province: province === "All Provinces" ? "" : province,
-          sortBy: sortBy,
-        });
-      }
-    }, 300);
+    let list = stores.slice();
 
-    return () => clearTimeout(handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+    // Filter by search query
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (store) =>
+          (store.storename || '')
+            .toString()
+            .toLowerCase()
+            .includes(q) ||
+          (store.about || '')
+            .toString()
+            .toLowerCase()
+            .includes(q)
+      );
+    }
 
-  // Immediately notify parent when province or sortBy changes
-  useEffect(() => {
-    if (!mounted.current) return;
-    onFilterChange({
-      search: search,
-      province: province === "All Provinces" ? "" : province,
-      sortBy: sortBy,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [province, sortBy]);
+    // Filter by province
+    if (province !== 'All Provinces') {
+      list = list.filter((store) => store.province === province);
+    }
 
-  // Mark mounted after first render
-  useEffect(() => {
-    mounted.current = true;
-  }, []);
+    // Sort stores
+    if (sortBy === 'storename') {
+      list.sort((a, b) => 
+        (a.storename || '').localeCompare(b.storename || '')
+      );
+    } else if (sortBy === 'city') {
+      list.sort((a, b) => 
+        (a.city || '').localeCompare(b.city || '')
+      );
+    } else if (sortBy === 'province') {
+      list.sort((a, b) => 
+        (a.province || '').localeCompare(b.province || '')
+      );
+    } else {
+      // Default: sort by createdAt (newest first)
+      list.sort(
+        (a, b) =>
+          new Date(b.createdAt || b._createdAt || 0) -
+          new Date(a.createdAt || a._createdAt || 0)
+      );
+    }
 
-  const handleReset = () => {
-    setSearch("");
-    setProvince("All Provinces");
-    setSortBy("createdAt");
-  };
+    return list;
+  }, [stores, search, province, sortBy]);
 
   return (
     <div className="mb-6">
@@ -66,7 +81,7 @@ const StoreFilterSort = ({ onFilterChange }) => {
           aria-label="Search stores"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by store name"
+          placeholder="Search by store name or description"
           className="w-full md:w-2/3 px-3 py-2 rounded border dark:bg-zinc-900 dark:text-white bg-white text-gray-900"
         />
 
@@ -95,14 +110,50 @@ const StoreFilterSort = ({ onFilterChange }) => {
 
         <button
           type="button"
-          onClick={handleReset}
+          onClick={() => {
+            setSearch('');
+            setProvince('All Provinces');
+            setSortBy('createdAt');
+          }}
           className="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
         >
           Reset
         </button>
       </div>
+
+      {/* Render filtered results */}
+      {filteredStores.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-xl text-gray-500">No stores found</p>
+          <p className="text-sm text-gray-400 mt-2">
+            Try adjusting your filters or check back later
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredStores.map((store) => (
+            <StoreCard
+              key={store._id}
+              shop={{
+                id: store._id,
+                name: store.storename,
+                avatar: store.image || '/api/placeholder/50/50',
+                likes: store.likes || 0,
+                totalProducts: 0,
+                isLiked: store.isLiked || false,
+                province: store.province,
+                city: store.city,
+                about: store.about,
+              }}
+              onLike={onLike}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-8 text-center text-sm text-gray-500">
+        Showing {filteredStores.length} store{filteredStores.length !== 1 ? 's' : ''}
+      </div>
     </div>
   );
-};
-
-export default StoreFilterSort;
+}
