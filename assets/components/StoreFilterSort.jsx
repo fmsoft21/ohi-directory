@@ -14,11 +14,7 @@ const provinces = [
   "North West"
 ];
 
-// Reusable StoreFilterSort component
-// Props:
-// - stores: array of store objects
-// - onLike: function to handle like action
-export default function StoreFilterSort({ stores = [], onLike }) {
+export default function StoreFilterSort({ stores = [], onLike, selectedStoreId }) {
   const [search, setSearch] = React.useState('');
   const [province, setProvince] = React.useState('All Provinces');
   const [sortBy, setSortBy] = React.useState('createdAt');
@@ -146,6 +142,7 @@ export default function StoreFilterSort({ stores = [], onLike }) {
                 about: store.about,
               }}
               onLike={onLike}
+              isHighlighted={selectedStoreId === store._id}
             />
           ))}
         </div>

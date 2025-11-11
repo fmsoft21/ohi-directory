@@ -100,6 +100,13 @@ export default function Navbar2() {
                 <MenuItems className="absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-md dark:bg-zinc-900 dark:text-white bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                   <MenuItem>
                     {({ active }) => (
+                      <a href="/dashboard" className={`block px-3 py-1 text-sm leading-6 hover:bg-zinc-50 dark:hover:bg-zinc-800 ${active ? 'bg-zinc-50' : ''}`}>
+                        Dashboard
+                      </a>
+                    )}
+                  </MenuItem>
+                  <MenuItem>
+                    {({ active }) => (
                       <a href="/dashboard/profile" className={`block px-3 py-1 text-sm leading-6 hover:bg-zinc-50 dark:hover:bg-zinc-800 ${active ? 'bg-zinc-50' : ''}`}>
                         Profile
                       </a>

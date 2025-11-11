@@ -263,25 +263,25 @@ const ProfileDetail = () => {
                 <SelectItem value="Gauteng" data-oid="1-fooqj">
                   Gauteng
                 </SelectItem>
-                <SelectItem value="Western-Cape" data-oid="-n9:wk0">
+                <SelectItem value="Western Cape" data-oid="-n9:wk0">
                   Western Cape
                 </SelectItem>
-                <SelectItem value="KwaZulu-Natal" data-oid="uufns4u">
+                <SelectItem value="KwaZulu Natal" data-oid="uufns4u">
                   KwaZulu-Natal
                 </SelectItem>
-                <SelectItem value="Northern-Cape" data-oid="1u0h3tq">
+                <SelectItem value="Northern Cape" data-oid="1u0h3tq">
                   Northern Cape
                 </SelectItem>
                 <SelectItem value="Mpumalanga" data-oid="hnh9kma">
                   Mpumalanga
                 </SelectItem>
-                <SelectItem value="Eastern-Cape" data-oid="a38.7eo">
+                <SelectItem value="Eastern Cape" data-oid="a38.7eo">
                   Eastern Cape
                 </SelectItem>
-                <SelectItem value="Free-State" data-oid="pk9qwjw">
+                <SelectItem value="Free State" data-oid="pk9qwjw">
                   Free State
                 </SelectItem>
-                <SelectItem value="North-West" data-oid="8uey347">
+                <SelectItem value="North West" data-oid="8uey347">
                   North West
                 </SelectItem>
                 <SelectItem value="Limpopo" data-oid="e29y0qh">

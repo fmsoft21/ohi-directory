@@ -1,10 +1,13 @@
+// utils/authOptions.js - Enhanced with multiple providers
 import NextAuth from "next-auth/next"
 import GoogleProvider from "next-auth/providers/google"
+import FacebookProvider from "next-auth/providers/facebook"
+import CredentialsProvider from "next-auth/providers/credentials"
 import User from '@/models/User';
 import connectDB from '@/config/database';
+import bcrypt from 'bcryptjs';
 
 export const authOptions = {
-  // Configure one or more authentication providers
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -17,48 +20,122 @@ export const authOptions = {
         }
       }
     }),
-    // ...add more providers here
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+    }),
+    // Optional: Email/Password authentication
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        await connectDB();
+        
+        const user = await User.findOne({ email: credentials.email });
+        
+        if (!user || !user.password) {
+          throw new Error('No user found with this email');
+        }
+        
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        
+        if (!isValid) {
+          throw new Error('Invalid password');
+        }
+        
+        return {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.storename,
+          image: user.image,
+        };
+      }
+    })
   ],
+  
   callbacks: {
-    //Invoked on success login
-    async signIn({ profile }){
-       // 1. Connect to database
-       await connectDB();
-       // 2. Check if user exists in database
-       const userExists = await User.findOne({ email: profile.email });
- 
-       // 3. If not, create user in database
-       if (!userExists) {
-         // Truncate user name if too long
-         const username = profile.name ? profile.name.slice(0, 20) : profile.email.split('@')[0];
+    async signIn({ user, account, profile }) {
+      await connectDB();
+      
+      const userExists = await User.findOne({ email: user.email || profile?.email });
 
-         // derive a default storename from the email (left of @), sanitized
-         const emailLocal = (profile.email || '').split('@')[0] || '';
-         const defaultStoreName = emailLocal
-           .replace(/\./g, ' ')
-           .replace(/[^a-z0-9-_]/gi, '')
-           .toLowerCase();
+      if (!userExists) {
+        // Create new user with onboarding flag
+        const emailLocal = (user.email || profile?.email || '').split('@')[0] || '';
+        const defaultStoreName = emailLocal
+          .replace(/\./g, ' ')
+          .replace(/[^a-z0-9-_]/gi, '')
+          .toLowerCase();
 
-         await User.create({
-           email: profile.email,
-           username,
-           storename: defaultStoreName,
-           image: profile.picture,
-         });
-       }
-       // 4. return true to allow sign in
-      return true
+        await User.create({
+          email: user.email || profile?.email,
+          storename: defaultStoreName,
+          image: user.image || profile?.picture,
+          // Flag for onboarding
+          isOnboarded: false,
+          authProvider: account.provider, // Track provider
+        });
+      }
+      
+      return true;
     },
 
-    async session({session}){
-       // 1. Get user from database
-       const user = await User.findOne({ email: session.user.email });
-       // 2. Assign user id from database to session
-       session.user.id = user._id.toString();
-       // 3. return session
-      return session
+    async session({ session, token }) {
+      await connectDB();
+      const user = await User.findOne({ email: session.user.email });
+      
+      if (user) {
+        session.user.id = user._id.toString();
+        session.user.isOnboarded = user.isOnboarded || false;
+        session.user.storename = user.storename;
+      }
+      
+      return session;
+    },
+
+    async jwt({ token, user, account, trigger, session }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id;
+      }
+      
+      // Handle session update (when update() is called)
+      if (trigger === 'update' && session) {
+        token.isOnboarded = session.user.isOnboarded;
+        token.storename = session.user.storename;
+      }
+      
+      // Fetch latest user data if not already in token
+      if (token.email && !token.isOnboarded && token.isOnboarded !== false) {
+        try {
+          await connectDB();
+          const user = await User.findOne({ email: token.email });
+          if (user) {
+            token.isOnboarded = user.isOnboarded || false;
+            token.storename = user.storename;
+          }
+        } catch (error) {
+          console.error('JWT callback error:', error);
+        }
+      }
+      
+      return token;
     }
-  }
+  },
+
+  pages: {
+    signIn: '/auth/signin',  // Custom sign-in page
+    error: '/auth/error',
+    newUser: '/onboarding',   // Redirect new users here
+  },
+
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
 }
 
 export default NextAuth(authOptions)

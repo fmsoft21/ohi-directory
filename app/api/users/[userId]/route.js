@@ -38,7 +38,7 @@ export const PUT = async (request, { params }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const userId = params.userId;
+    const {userId} = await params;
     const data = await request.json();
 
     if (!userId) {
@@ -79,7 +79,7 @@ export const DELETE = async (request, { params }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const userId = params.userId;
+    const {userId} = await params;
 
     if (!userId) {
       return new Response('User ID is required', { status: 400 });

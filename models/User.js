@@ -1,15 +1,32 @@
+// models/User.js - Updated with onboarding and password support
 import { Schema, model, models } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const UserSchema = new Schema(
   {
     email: {
       type: String,
       unique: [true, 'Email already exists!'],
-      // required: [true, 'Email is required!'],
+      required: [true, 'Email is required!'],
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      // Only required for email/password signups
+      required: function() {
+        return this.authProvider === 'credentials';
+      },
+      select: false, // Don't return password by default
+    },
+    authProvider: {
+      type: String,
+      enum: ['google', 'facebook', 'credentials'],
+      default: 'google',
     },
     storename: {
       type: String,
-      // required: [false, 'A name for your store is required!'],
+      required: [true, 'Store name is required!'],
     },
     phone: {
       type: String,
@@ -46,13 +63,56 @@ const UserSchema = new Schema(
         ref: 'Product',
       },
     ],
+    
+    // Onboarding tracking
+    isOnboarded: {
+      type: Boolean,
+      default: false,
+    },
+    onboardingStep: {
+      type: Number,
+      default: 0, // Track current step (0 = not started)
+    },
+    
+    // Email verification for credentials signup
+    isEmailVerified: {
+      type: Boolean,
+      default: function() {
+        // OAuth users are auto-verified
+        return this.authProvider !== 'credentials';
+      }
+    },
+    emailVerificationToken: String,
+    emailVerificationExpires: Date,
+    
+    // Password reset
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
+    
+    // Account status
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Ensure a default storename is set when creating a user if missing
+// Hash password before saving
+UserSchema.pre('save', async function(next) {
+  // Only hash if password is modified or new
+  if (!this.isModified('password')) return next();
+  
+  if (this.password) {
+    this.password = await bcrypt.hash(this.password, 12);
+  }
+  
+  next();
+});
+
+// Ensure default storename
 UserSchema.pre('save', function (next) {
   if (!this.storename && this.email) {
     const local = (this.email.split('@')[0] || this.email).toString();
@@ -62,25 +122,38 @@ UserSchema.pre('save', function (next) {
       .toLowerCase();
   }
 
-  // record whether storename was modified so post hook can act conditionally
   this._wasStorenameModified = this.isModified('storename');
   next();
 });
 
-// When a user's storename changes, update ownerName on their products
+// Update products when storename changes
 UserSchema.post('save', async function (doc) {
   try {
-    // only run update if storename was modified during this save
     if (this._wasStorenameModified && doc && doc._id && doc.storename) {
       const mongoose = await import('mongoose');
       const Product = mongoose.models.Product || mongoose.model('Product');
       await Product.updateMany({ owner: doc._id }, { ownerName: doc.storename });
     }
   } catch (err) {
-    // Log and continue — don't block user save
     console.warn('Failed to sync ownerName on products after user update', err);
   }
 });
+
+// Method to compare password
+UserSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Check if onboarding is complete
+UserSchema.methods.isOnboardingComplete = function() {
+  return !!(
+    this.storename &&
+    this.phone &&
+    this.address &&
+    this.city &&
+    this.province
+  );
+};
 
 const User = models.User || model('User', UserSchema);
 
