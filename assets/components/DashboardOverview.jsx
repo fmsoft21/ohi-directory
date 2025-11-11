@@ -136,7 +136,7 @@ const RecentProducts = ({ products }) => {
       ))}
       {products.length > 5 && (
         <Link href="/dashboard/products">
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full mt-2">
             View All Products
             <ArrowUpRight className="h-4 w-4 ml-2" />
           </Button>

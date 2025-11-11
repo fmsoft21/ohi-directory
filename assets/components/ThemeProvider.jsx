@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function ThemeToggle() {
+export function ThemeToggle({className: props}) {
   const { theme, setTheme } = useTheme();
 
   const [mounted, setMounted] = useState(false);
@@ -20,7 +20,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      data-oid="knxchgl"
+      className={props}
     >
       {theme === "dark" ? (
         <Sun

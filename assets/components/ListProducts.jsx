@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, Pencil, X, PlusCircle } from "lucide-react";
+import { ChevronRight, ChevronLeft, Pencil, X, PlusCircle, Star, Package } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { toast } from "@/components/hooks/use-toast";
@@ -130,15 +130,15 @@ const ProductsTable = () => {
   };
 
   return (
-    <Card className="w-11/12 mx-auto mt-10 dark:bg-zinc-900" data-oid="y.qvo25">
-      <CardHeader className="flex flex-row" data-oid="-um8bbl">
+    <Card className="w-11/12 mx-auto mt-2 dark:bg-zinc-900" data-oid="y.qvo25">
+      <CardHeader className="flex flex-row " data-oid="-um8bbl">
         <CardTitle data-oid="54xqb8g">Products</CardTitle>
         <Link
           className="ml-auto"
           href="/dashboard/products/add"
           data-oid="9yen0nk"
         >
-          <Button  data-oid="33:rv8u">
+          <Button className="-mt-4" data-oid="33:rv8u">
             <PlusCircle className="mr-2 h-4 w-4" data-oid="zdp2ibn" />
             Add Product
           </Button>
@@ -159,142 +159,103 @@ const ProductsTable = () => {
           </div>
         ) : (
           <>
-            <Table data-oid=":.b4-ri">
-              <TableHeader data-oid="ieuas4-">
-                <TableRow data-oid=".1nz.8s">
-                  <TableHead data-oid="6y65aig">Image</TableHead>
-                  <TableHead data-oid="d5k:nbm">Title</TableHead>
-                  <TableHead data-oid="793-35s">Price</TableHead>
-                  <TableHead data-oid="db_oo14">Category</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody data-oid="w:-n4ga">
-                {products
-                  .slice((page - 1) * rowsPerPage, page * rowsPerPage)
-                  .map((product) => (
-                    <TableRow key={product.id} data-oid="8axeovt">
-                      <TableCell data-oid="wka09v8">
-                        <Image
-                          src={product.images[0]}
-                          alt={product.title}
-                          width={100}
-                          height={50}
-                          className="w-18 h-16 object-cover rounded"
-                          data-oid="b3fmpf7"
-                        />
-                      </TableCell>
-                      <TableCell data-oid="2_as-cm">{product.title}</TableCell>
-                      <TableCell data-oid="17l999y">{product.price}</TableCell>
-                      <TableCell data-oid="cuz7eju">
-                        {product.category}
-                      </TableCell>
-                      <TableCell data-oid="ep-_oqu">
-                        <Link
-                          href={`/dashboard/products/edit/${product._id}`}
-                          data-oid="jdygsod"
-                        >
-                          <Button
-                            className="mr-2"
-                            variant="outline"
-                            size="sm"
-                            data-oid=".yv3q3d"
-                          >
-                            <Pencil
-                              className="h-4 w-4"
-                              data-oid="oz3-ukl"
-                            />
-                            
+            <div className="space-y-4">
+              {products
+                .slice((page - 1) * rowsPerPage, page * rowsPerPage)
+                .map((product) => (
+                  <div
+                    key={product._id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0 relative">
+                        {product.images?.[0] ? (
+                          <Image
+                            src={product.images[0]}
+                            alt={product.title}
+                            width={160}
+                            height={120}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{product.title}</p>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span>R{product.price}</span>
+                          <span>•</span>
+                          <span>Stock: {product.stock}</span>
+                          {product.rating > 0 && (
+                            <>
+                              <span>•</span>
+                              <div className="flex items-center">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+                                {product.rating}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <Link href={`/dashboard/products/edit/${product._id}`} data-oid="jdygsod">
+                        <Button className="mr-2" variant="outline" size="sm" data-oid=".yv3q3d">
+                          <Pencil className="h-4 w-4" data-oid="oz3-ukl" />
+                        </Button>
+                      </Link>
+
+                      <AlertDialog data-oid="0roiuht">
+                        <AlertDialogTrigger asChild data-oid="fn6h-8c">
+                          <Button variant="destructive" size="sm" data-oid="uvrhks0">
+                            <X className="h-4 w-4" data-oid="8_9lp:x" />
                           </Button>
-                        </Link>
-                        <AlertDialog data-oid="0roiuht">
-                          <AlertDialogTrigger asChild data-oid="fn6h-8c">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              data-oid="uvrhks0"
-                            >
-                              <X className="h-4 w-4" data-oid="8_9lp:x" />
-                              
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent data-oid="7wc_k.6">
-                            <AlertDialogHeader data-oid="10a04qt">
-                              <AlertDialogTitle data-oid="jgnj8ay">
-                                Are you absolutely sure?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription data-oid="y_4pfht">
-                                This action cannot be undone. This will
-                                permanently delete your product and remove your
-                                data from our servers.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter data-oid="k4qa_4p">
-                              <AlertDialogCancel data-oid="j_-kb5x">
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction data-oid="_qd75uc">
-                                <Button
-                                  onClick={() =>
-                                    handleDeleteProduct(product._id)
-                                  }
-                                  data-oid="4ce:oce"
-                                >
-                                  Continue
-                                </Button>
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-            <div
-              className="flex items-center justify-between mt-4"
-              data-oid="lm3iczd"
-            >
+                        </AlertDialogTrigger>
+                        <AlertDialogContent data-oid="7wc_k.6">
+                          <AlertDialogHeader data-oid="10a04qt">
+                            <AlertDialogTitle data-oid="jgnj8ay">Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription data-oid="y_4pfht">
+                              This action cannot be undone. This will permanently delete your product and remove your data from our servers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter data-oid="k4qa_4p">
+                            <AlertDialogCancel data-oid="j_-kb5x">Cancel</AlertDialogCancel>
+                            <AlertDialogAction data-oid="_qd75uc">
+                              <Button onClick={() => handleDeleteProduct(product._id)} data-oid="4ce:oce">Continue</Button>
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="flex items-center justify-between mt-4" data-oid="lm3iczd">
               <div className="flex items-center space-x-2" data-oid="yh8h945">
-                <span data-oid="yf-e8_3">Rows per page:</span>
-                <Select
-                  onValueChange={handleRowsPerPageChange}
-                  defaultValue={rowsPerPage.toString()}
-                  data-oid="u:pqi4y"
-                >
+                <Select onValueChange={handleRowsPerPageChange} defaultValue={rowsPerPage.toString()} data-oid="u:pqi4y">
                   <SelectTrigger className="w-20" data-oid="o6bpkxk">
                     <SelectValue data-oid="o4_z3dc">{rowsPerPage}</SelectValue>
                   </SelectTrigger>
                   <SelectContent data-oid="ppedyrk">
-                    <SelectItem value="5" data-oid="i881vp:">
-                      5
-                    </SelectItem>
-                    <SelectItem value="10" data-oid="duckkbs">
-                      10
-                    </SelectItem>
-                    <SelectItem value="20" data-oid="qneu0lm">
-                      20
-                    </SelectItem>
+                    <SelectItem value="5" data-oid="i881vp:">5</SelectItem>
+                    <SelectItem value="10" data-oid="duckkbs">10</SelectItem>
+                    <SelectItem value="20" data-oid="qneu0lm">20</SelectItem>
                   </SelectContent>
                 </Select>
+                <span data-oid="yf-e8_3"> per page</span>
+
               </div>
               <div className="flex items-center space-x-2" data-oid="nx2b1ub">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={page === 1}
-                  onClick={() => handlePageChange("prev")}
-                  data-oid="kgyydm4"
-                >
+                <Button variant="ghost" size="sm" disabled={page === 1} onClick={() => handlePageChange("prev")} data-oid="kgyydm4">
                   <ChevronLeft data-oid="1edntnp" />
                 </Button>
-                <span data-oid="phczq-z">Page {page} of 10</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={page === 10}
-                  onClick={() => handlePageChange("next")}
-                  data-oid="rsiw4xn"
-                >
+                <span data-oid="phczq-z">{page} of {Math.max(1, Math.ceil(products.length / rowsPerPage))}</span>
+                <Button variant="ghost" size="sm" disabled={page === Math.ceil(products.length / rowsPerPage)} onClick={() => handlePageChange("next")} data-oid="rsiw4xn">
                   <ChevronRight data-oid="l1wmxia" />
                 </Button>
               </div>

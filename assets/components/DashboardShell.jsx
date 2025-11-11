@@ -51,16 +51,16 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 
 const navigation = [
-  { name: "Dashboard", href: "#", icon: HomeIcon, current: true },
+  { name: "Dashboard", href: "/dashboard", icon: HomeIcon, current: true },
   {
     name: "Profile",
-    href: "/dashboard/profile/",
+    href: "/dashboard/profile",
     icon: UserIcon,
     current: false,
   },
   {
     name: "Products",
-    href: "/dashboard/products/",
+    href: "/dashboard/products",
     icon: Package,
     current: false,
   },
@@ -75,7 +75,7 @@ const userNavigation = [
 ];
 
 const breadcrumbs = [
-    { label: "Dashboard", link: "#" },
+    { label: "Dashboard", link: "/dashboard" },
     { label: "Products", link: "/dashboard/products" },
     { label: "Edit Products", link: "/dashboard/products" },
   ];
@@ -86,6 +86,26 @@ function classNames(...classes) {
 
 export default function DashboardShell({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // determine the most specific matching navigation item for the current pathname
+  const activeHref = React.useMemo(() => {
+    if (!pathname) return null;
+    let best = null;
+    for (const item of navigation) {
+      if (!item.href) continue;
+      if (pathname === item.href || pathname.startsWith(item.href + '/')) {
+        if (!best || item.href.length > best.length) best = item.href;
+      }
+    }
+    // fallback to exact match
+    if (!best) {
+      for (const item of navigation) {
+        if (item.href === pathname) return item.href;
+      }
+    }
+    return best;
+  }, [pathname]);
 
   return (
     <>
@@ -172,7 +192,8 @@ export default function DashboardShell({ children }) {
                             <a
                               href={item.href}
                               className={classNames(
-                                item.current
+                                // derive active state from pathname (activeHref) instead of the static item.current
+                                item.href === activeHref
                                   ? "bg-emerald-600 text-white"
                                   : "text-gray-600 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white",
                                 "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
@@ -249,7 +270,8 @@ export default function DashboardShell({ children }) {
                         <a
                           href={item.href}
                           className={classNames(
-                            item.current
+                            // use the computed activeHref to determine which item is active
+                            item.href === activeHref
                               ? "bg-emerald-600 text-white"
                               : "text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white",
                             "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",

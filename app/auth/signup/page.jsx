@@ -285,8 +285,10 @@ export default function SignUpPage() {
           <img
             alt=""
             src="/cover-image.jpg"
-            className="absolute inset-0 h-full w-full object-cover opacity-60"
+            className="absolute inset-0 h-full w-full object-cover"
           />
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-zinc-100/90 via-transparent to-transparent dark:from-zinc-900/90" />
+
         </div>
       </div>
     </>

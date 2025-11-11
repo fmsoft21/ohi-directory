@@ -206,7 +206,7 @@ const EditProductForm = () => {
         description: "Your product has been updated successfully.",
       });
 
-      router.push("/dashboard/products/list");
+      router.push("/dashboard/products");
     } catch (error) {
       console.error("Update error:", error);
       toast({
@@ -233,7 +233,7 @@ const EditProductForm = () => {
         >
           {/* Header section */}
           <div className="flex items-center gap-4" data-oid="mkbneya">
-            <Link href="/dashboard/products/list" data-oid="xftav6m">
+            <Link href="/dashboard/products" data-oid="xftav6m">
               <Button
                 variant="outline"
                 size="icon"
@@ -252,20 +252,16 @@ const EditProductForm = () => {
             >
               Edit Product - {fields.title}
             </h1>
-            <Badge
-              variant="outline"
-              className="ml-auto sm:ml-0"
-              data-oid="izmeg_:"
-            >
-              In stock
-            </Badge>
+            
             <div
               className="hidden items-center gap-2 md:ml-auto md:flex"
               data-oid="1ifcrm0"
             >
+              <Link href="/dashboard/products">
               <Button variant="outline" size="sm" data-oid="hrrlpz6">
                 Discard
               </Button>
+              </Link>
               <Button type="submit" size="sm" data-oid="k:b5c-t">
                 Update Product
               </Button>
@@ -287,7 +283,7 @@ const EditProductForm = () => {
                 <CardHeader data-oid="s3tfmrn">
                   <CardTitle data-oid="t.n6qku">Product Details</CardTitle>
                   <CardDescription data-oid="h:47:iu">
-                    Enter the details of your product
+                    Edit the details of your product
                   </CardDescription>
                 </CardHeader>
                 <CardContent data-oid="pwfvh7p">

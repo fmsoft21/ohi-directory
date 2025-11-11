@@ -56,9 +56,9 @@ const StoreDetailPage = () => {
           src={store.coverImage || '/coverr.jpg'}
           alt={`${store.storename} cover`}
           fill
-          className="object-cover opacity-50 dark:opacity-30 "
+          className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 dark:to-black/40" />
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-transparent dark:from-zinc-900/90" />
       </div>
 
       {/* Avatar centered and overlapping the cover */}
