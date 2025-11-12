@@ -81,7 +81,7 @@ const ProductCard = ({ product }) => {
             </dl>
 
             <Button 
-              className="rounded-full p-3 ml-2" 
+              className="rounded-full bg-zinc-100 hover:bg-zinc-200 p-3 ml-2 mt-12" 
               disabled={product?.stock === 0}
               onClick={(e) => {
                 e.preventDefault();
@@ -89,7 +89,7 @@ const ProductCard = ({ product }) => {
                 console.log('Add to cart:', product._id);
               }}
             >
-              <ShoppingCart className="h-4 w-4" />
+              <ShoppingCart className="text-gray-600 dark:text-gray-400 h-4 w-4" />
             </Button>
           </div>
         </div>
