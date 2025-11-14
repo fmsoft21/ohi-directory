@@ -43,9 +43,26 @@ const UserSchema = new Schema(
     },
     province: {
       type: String,
+      enum: [
+        'Gauteng',
+        'Western Cape',
+        'KwaZulu-Natal',
+        'Eastern Cape',
+        'Free State',
+        'Limpopo',
+        'Mpumalanga',
+        'Northern Cape',
+        'North West',
+      ],
     },
     zipCode: {
       type: String,
+      validate: {
+        validator: function(v) {
+          return !v || /^\d{4}$/.test(v); // SA zip codes are 4 digits
+        },
+        message: 'ZIP code must be 4 digits'
+      }
     },
     about: {
       type: String,
@@ -63,6 +80,40 @@ const UserSchema = new Schema(
         ref: 'Product',
       },
     ],
+    
+    // Geospatial fields
+    latitude: {
+      type: Number,
+      min: -90,
+      max: 90,
+      index: '2dsphere',
+    },
+    longitude: {
+      type: Number,
+      min: -180,
+      max: 180,
+      index: '2dsphere',
+    },
+    // Store the formatted address returned by geocoding service
+    geocodedAddress: {
+      type: String,
+    },
+    // When the address was last geocoded
+    geocodedAt: {
+      type: Date,
+    },
+    // GeoJSON point for advanced geospatial queries
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        index: '2dsphere',
+      },
+    },
     
     // Onboarding tracking
     isOnboarded: {
@@ -112,6 +163,20 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
+// Pre-save middleware to sync location field with lat/lng
+UserSchema.pre('save', function(next) {
+  if (this.latitude && this.longitude) {
+    this.location = {
+      type: 'Point',
+      coordinates: [this.longitude, this.latitude]
+    };
+  }
+  next();
+});
+
+// Add index for geospatial queries
+UserSchema.index({ location: '2dsphere' });
+
 // Ensure default storename
 UserSchema.pre('save', function (next) {
   if (!this.storename && this.email) {
@@ -153,6 +218,30 @@ UserSchema.methods.isOnboardingComplete = function() {
     this.city &&
     this.province
   );
+};
+
+// Method to find nearby stores
+UserSchema.statics.findNearby = function(longitude, latitude, maxDistanceKm = 50) {
+  return this.find({
+    location: {
+      $near: {
+        $geometry: {
+          type: 'Point',
+          coordinates: [longitude, latitude]
+        },
+        $maxDistance: maxDistanceKm * 1000 // Convert km to meters
+      }
+    }
+  });
+};
+
+// Method to check if user needs re-geocoding (e.g., after 30 days)
+UserSchema.methods.needsGeocoding = function() {
+  if (!this.latitude || !this.longitude) return true;
+  if (!this.geocodedAt) return true;
+  
+  const daysSinceGeocoding = (Date.now() - this.geocodedAt) / (1000 * 60 * 60 * 24);
+  return daysSinceGeocoding > 30; // Re-geocode after 30 days
 };
 
 const User = models.User || model('User', UserSchema);

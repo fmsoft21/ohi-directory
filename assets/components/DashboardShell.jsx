@@ -188,7 +188,7 @@ export default function DashboardShell({ children }) {
                         data-oid="1k59rl4"
                       >
                         {navigation.map((item) => (
-                          <li key={item.name} data-oid=":bsoz91">
+                          <li key={item.name}>
                             <a
                               href={item.href}
                               className={classNames(
@@ -212,16 +212,14 @@ export default function DashboardShell({ children }) {
                       </ul>
                     </li>
                     
-                    <li className="mt-auto" data-oid="yfv8hlk">
+                    <li className="mt-auto">
                       <a
                         href="#"
                         className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-800 hover:bg-zinc-800 hover:text-white"
-                        data-oid="a73qlmu"
                       >
                         <Cog6ToothIcon
                           aria-hidden="true"
                           className="h-6 w-6 shrink-0"
-                          data-oid="t.sys3c"
                         />
                         Settings
                       </a>
@@ -272,7 +270,7 @@ export default function DashboardShell({ children }) {
                             // use the computed activeHref to determine which item is active
                             item.href === activeHref
                               ? "bg-emerald-600 text-white"
-                              : "text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white",
+                              : "text-gray-600 dark:text-gray-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-emerald-600 dark:hover:text-emerald-600",
                             "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
                           )}
                           data-oid="mchmei0"

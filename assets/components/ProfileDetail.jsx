@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,14 +13,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/hooks/use-toast";
+import { MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { SkeletonLoader } from "@/components/ui/skeleton-loader";
+import { searchAddresses, extractAddressComponents } from "@/utils/addressAutocomplete";
 
 const ProfileDetail = () => {
   const { data: session } = useSession();
-  // const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeStatus, setGeocodeStatus] = useState(null);
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const addressInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    // email: session?.user?.email || '',
     phone: "",
     storename: "",
     address: "",
@@ -29,6 +36,10 @@ const ProfileDetail = () => {
     province: "",
     zipCode: "",
     about: "",
+    latitude: null,
+    longitude: null,
+    geocodedAddress: null,
+    geocodedAt: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -37,14 +48,22 @@ const ProfileDetail = () => {
     const fetchUserData = async () => {
       if (session?.user?.id) {
         try {
+          setIsLoadingData(true);
           const response = await fetch(`/api/users/${session.user.id}`);
           const data = await response.json();
           setFormData((prevState) => ({
             ...prevState,
             ...data,
           }));
+          
+          // Set geocode status if coordinates exist
+          if (data.latitude && data.longitude) {
+            setGeocodeStatus('success');
+          }
         } catch (error) {
           console.error("Error fetching user data:", error);
+        } finally {
+          setIsLoadingData(false);
         }
       }
     };
@@ -66,14 +85,68 @@ const ProfileDetail = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle address input with autocomplete
+  const handleAddressInput = async (value) => {
+    setFormData({
+      ...formData,
+      address: value,
+    });
+    setGeocodeStatus(null);
+
+    if (value.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const suggestions = await searchAddresses(value);
+      setAddressSuggestions(suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      setAddressSuggestions([]);
+    }
+  };
+
+  // Handle address selection from dropdown
+  const handleSelectAddress = async (selectedAddress) => {
+    // Extract and update address components
+    const components = extractAddressComponents(selectedAddress.label);
+    
+    setFormData((prev) => ({
+      ...prev,
+      address: components.address, // Use full address with street number
+      city: components.city || prev.city,
+      province: components.province || prev.province,
+      zipCode: components.zipCode || prev.zipCode,
+      latitude: selectedAddress.lat,
+      longitude: selectedAddress.lon,
+      geocodedAddress: selectedAddress.label,
+      geocodedAt: new Date(),
+    }));
+    
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+    setGeocodeStatus('success');
+
+    toast({
+      title: "Address Located",
+      description: "Address coordinates have been set automatically",
+      variant: "default",
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) return;
 
     setLoading(true);
+    setShowSuggestions(false);
     try {
-      const response = await fetch(`/api/users/${session.user.id}`, {
+      // This route will auto-geocode if address changed
+      const response = await fetch(`/api/users/${session.user.id}/geocode`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -82,10 +155,18 @@ const ProfileDetail = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        
+        if (data.user.geocoded) {
+          setGeocodeStatus('success');
+        }
+
         toast({
           title: "Success",
-          description: "Profile updated successfully",
-          variant: "primary",
+          description: data.user.geocoded 
+            ? "Profile updated and address geocoded successfully"
+            : "Profile updated successfully",
+          variant: "default",
         });
       } else {
         throw new Error("Failed to update profile");
@@ -106,237 +187,234 @@ const ProfileDetail = () => {
       ...formData,
       [field]: e.target.value,
     });
+    
+    // Clear geocode status if address fields change
+    const addressFields = ['address', 'city', 'province', 'zipCode'];
+    if (addressFields.includes(field)) {
+      setGeocodeStatus(null);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8" data-oid="or.bs6i">
-      <div className="flex items-center justify-between" data-oid="xdsbgcr">
-        <h2 className="text-3xl font-bold" data-oid="3b6ykyh">
-          Profile Settings
-        </h2>
-        <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-          data-oid="f6q.yc6"
-        >
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">Profile Settings</h2>
+        <Button variant="outline" onClick={() => window.history.back()}>
           Back
         </Button>
       </div>
 
-      <div className="flex items-center justify-center mb-8" data-oid="2im9age">
-        <div className="relative" data-oid="ona2zw.">
-          <div
-            className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center"
-            data-oid="4lnew74"
-          >
+      {/* Show skeleton while loading */}
+      {isLoadingData ? (
+        <SkeletonLoader type="profile" />
+      ) : (
+        <>
+          {/* Geocoding Status Alert */}
+          {formData.latitude && formData.longitude && (
+            <Alert className={geocodeStatus === 'success' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950' : ''}>
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertDescription className="text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <strong>Location Set:</strong> {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                    {formData.geocodedAt && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Last updated: {new Date(formData.geocodedAt).toLocaleDateString()})
+                      </span>
+                    )}
+                  </div>
+                  {/* <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeocode}
+                    disabled={geocoding}
+                  >
+                    Update Location
+                  </Button> */}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+      <div className="flex items-center justify-center mb-8">
+        <div className="relative">
+          <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
             {session?.user?.image ? (
               <img
                 src={session.user.image}
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover"
-                data-oid="irw6whl"
               />
             ) : (
-              <span className="text-gray-400" data-oid="2:lnbah">
-                avatar
-              </span>
+              <img src="/profile.png" alt="avatar" className="w-24 h-24 rounded-full" />
             )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="absolute bottom-0 right-0"
-            data-oid="t51vqwm"
-          >
+          <Button variant="outline" size="sm" className="absolute bottom-0 right-0">
             Change
           </Button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6" data-oid="in.7z3j">
-        <div className="grid grid-cols-2 gap-4" data-oid="weu165_">
-          <div className="space-y-2" data-oid="y2j5f89">
-            <label className="text-sm font-medium" data-oid="ftqhwl-">
-              Phone
-            </label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">Phone</label>
             <Input
               value={formData.phone}
               onChange={(e) => handleInputChange(e, "phone")}
               error={errors.phone}
-              data-oid="bp91oeg"
             />
-
-            {errors.phone && (
-              <p className="text-sm text-red-500" data-oid="bhanjqq">
-                {errors.phone}
-              </p>
-            )}
+            {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
           </div>
 
-          <div className="space-y-2" data-oid="ypwhqer">
-            <label className="text-sm font-medium" data-oid="a7ygx-y">
-              Store Name
-            </label>
+          <div>
+            <label className="text-sm font-medium">Store Name</label>
             <Input
               value={formData.storename}
               onChange={(e) => handleInputChange(e, "storename")}
               error={errors.storename}
-              data-oid="ebhzmim"
             />
-
-            {errors.phone && (
-              <p className="text-sm text-red-500" data-oid="6uw7ow9">
-                {errors.storename}
-              </p>
-            )}
+            {errors.storename && <p className="text-sm text-red-500">{errors.storename}</p>}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4" data-oid="rzlntc7">
-          <div className="space-y-2" data-oid="m6iblab">
-            <label className="text-sm font-medium" data-oid="_093muj">
-              Address
-            </label>
-            <Input
-              value={formData.address}
-              onChange={(e) => handleInputChange(e, "address")}
-              error={errors.address}
-              data-oid="ifdwnrz"
-            />
-
-            {errors.address && (
-              <p className="text-sm text-red-500" data-oid="pe2b.2c">
-                {errors.address}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2" data-oid="axhux_i">
-            <label className="text-sm font-medium" data-oid="266nh0b">
-              Email
-            </label>
-            <Input value={session?.user?.email} disabled data-oid="cxdud2_" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <div>
+            <label className="text-sm font-medium">Email</label>
+            <Input value={session?.user?.email} disabled />
           </div>
         </div>
 
-        <div className="space-y-2" data-oid="5dwdq1y">
-          <label className="text-sm font-medium" data-oid="c.3e1nx">
-            Country
-          </label>
-          <Input value={formData.country} disabled data-oid="zwiff0j" />
+        <div>
+          <label className="text-sm font-medium">Country</label>
+          <Input value={formData.country} disabled />
         </div>
+            <div>
+            <label className="text-sm font-medium">Address</label>
+            <div className="relative">
+              <Input
+                ref={addressInputRef}
+                value={formData.address}
+                onChange={(e) => handleAddressInput(e.target.value)}
+                error={errors.address}
+                placeholder="Start typing your address..."
+                autoComplete="off"
+              />
+              
+              {/* Address suggestions dropdown */}
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  {addressSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelectAddress(suggestion)}
+                      className="w-full text-left px-4 py-3 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-b border-zinc-100 dark:border-zinc-700 last:border-b-0 transition-colors"
+                    >
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {suggestion.label}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
+          </div>
 
-        <div className="grid grid-cols-3 gap-4" data-oid="7krj0ta">
-          <div className="space-y-2" data-oid="3af_ngb">
-            <label className="text-sm font-medium" data-oid="-d1wju0">
-              City
-            </label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium">City</label>
             <Input
               value={formData.city}
               onChange={(e) => handleInputChange(e, "city")}
               error={errors.city}
-              data-oid="7_pdr.y"
             />
-
-            {errors.city && (
-              <p className="text-sm text-red-500" data-oid="f_hu:8x">
-                {errors.city}
-              </p>
-            )}
+            {errors.city && <p className="text-sm text-red-500">{errors.city}</p>}
           </div>
 
-          <div className="space-y-2" data-oid="ithw_i0">
-            <label className="text-sm font-medium" data-oid=".imjbe0">
-              Province
-            </label>
+          <div>
+            <label className="text-sm font-medium">Province</label>
             <Select
               value={formData.province}
               onValueChange={(value) =>
                 setFormData({ ...formData, province: value })
               }
-              data-oid="7cj5bx3"
             >
-              <SelectTrigger data-oid="f765o6d">
-                <SelectValue placeholder="Select province" data-oid="88.kjkb" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select province" />
               </SelectTrigger>
-              <SelectContent data-oid="jbnchok">
-                <SelectItem value="Gauteng" data-oid="1-fooqj">
-                  Gauteng
-                </SelectItem>
-                <SelectItem value="Western Cape" data-oid="-n9:wk0">
-                  Western Cape
-                </SelectItem>
-                <SelectItem value="KwaZulu Natal" data-oid="uufns4u">
-                  KwaZulu-Natal
-                </SelectItem>
-                <SelectItem value="Northern Cape" data-oid="1u0h3tq">
-                  Northern Cape
-                </SelectItem>
-                <SelectItem value="Mpumalanga" data-oid="hnh9kma">
-                  Mpumalanga
-                </SelectItem>
-                <SelectItem value="Eastern Cape" data-oid="a38.7eo">
-                  Eastern Cape
-                </SelectItem>
-                <SelectItem value="Free State" data-oid="pk9qwjw">
-                  Free State
-                </SelectItem>
-                <SelectItem value="North West" data-oid="8uey347">
-                  North West
-                </SelectItem>
-                <SelectItem value="Limpopo" data-oid="e29y0qh">
-                  Limpopo
-                </SelectItem>
+              <SelectContent>
+                <SelectItem value="Gauteng">Gauteng</SelectItem>
+                <SelectItem value="Western Cape">Western Cape</SelectItem>
+                <SelectItem value="KwaZulu-Natal">KwaZulu-Natal</SelectItem>
+                <SelectItem value="Northern Cape">Northern Cape</SelectItem>
+                <SelectItem value="Mpumalanga">Mpumalanga</SelectItem>
+                <SelectItem value="Eastern Cape">Eastern Cape</SelectItem>
+                <SelectItem value="Free State">Free State</SelectItem>
+                <SelectItem value="North West">North West</SelectItem>
+                <SelectItem value="Limpopo">Limpopo</SelectItem>
               </SelectContent>
             </Select>
-            {errors.province && (
-              <p className="text-sm text-red-500" data-oid="fqqxooo">
-                {errors.province}
-              </p>
-            )}
+            {errors.province && <p className="text-sm text-red-500">{errors.province}</p>}
           </div>
 
-          <div className="space-y-2" data-oid="um3lwvl">
-            <label className="text-sm font-medium" data-oid="cb.yf-z">
-              Postal Code
-            </label>
+          <div>
+            <label className="text-sm font-medium">Postal Code</label>
             <Input
               value={formData.zipCode}
               onChange={(e) => handleInputChange(e, "zipCode")}
               error={errors.zipCode}
-              data-oid="1guu.gw"
+              maxLength={4}
             />
-
-            {errors.zipCode && (
-              <p className="text-sm text-red-500" data-oid="_g-frvb">
-                {errors.zipCode}
-              </p>
-            )}
+            {errors.zipCode && <p className="text-sm text-red-500">{errors.zipCode}</p>}
           </div>
         </div>
 
-        <div className="space-y-2" data-oid="l:2zg1f">
-          <label className="text-sm font-medium" data-oid="6j1b97m">
-            About
-          </label>
+        {/* Automatic Geocoding Info */}
+        {geocodeStatus === 'success' && (
+          <Alert className="border-emerald-500 bg-emerald-50 dark:bg-emerald-950">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <AlertDescription className="text-sm text-emerald-700 dark:text-emerald-300">
+              Location has been automatically set from your address. You'll appear on the stores map.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div>
+          <label className="text-sm font-medium">About</label>
           <Textarea
             value={formData.about}
             onChange={(e) => handleInputChange(e, "about")}
             placeholder="Let customers know more about your store"
             className="h-32"
-            data-oid="9at6i.b"
           />
         </div>
 
-        <div className="flex justify-end space-x-4" data-oid="p9pxtc6">
-          <Button variant="outline" type="button" data-oid="bk13378">
+        <div className="flex justify-end space-x-4">
+          <Button variant="outline" type="button">
             Cancel
           </Button>
-          <Button type="submit" disabled={loading} data-oid="a4g7rzy">
-            {loading ? "Saving..." : "Save Changes"}
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </div>
       </form>
+        </>
+      )}
     </div>
   );
 };

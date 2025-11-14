@@ -3,7 +3,7 @@ import User from '@/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/utils/authOptions';
 
-// GET /api/users/[userId]
+// GET /api/users/[id]
 export const GET = async (request, { params }) => {
   try {
     await connectDB();
@@ -28,7 +28,7 @@ export const GET = async (request, { params }) => {
   }
 };
 
-// PUT /api/users/[userId]
+// PUT /api/users/[id]
 export const PUT = async (request, { params }) => {
   try {
     await connectDB();
@@ -69,7 +69,7 @@ export const PUT = async (request, { params }) => {
   }
 };
 
-// DELETE /api/users/[userId]
+// DELETE /api/users/[id]
 export const DELETE = async (request, { params }) => {
   try {
     await connectDB();

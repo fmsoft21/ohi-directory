@@ -96,7 +96,7 @@ const StoresPage = () => {
           height={1500}
           width={2830}
           alt=""
-          src="https://plus.unsplash.com/premium_photo-1677456379788-82ca409e5bfc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=870"
+          src="/onboard.jpeg"
           className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center opacity-30 dark:opacity-20"
         />
         <div className="h-10 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"></div>

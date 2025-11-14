@@ -25,13 +25,13 @@ export function ThemeToggle({className: props}) {
       {theme === "dark" ? (
         <Sun
           suppressHydrationWarning
-          className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:text-white"
+          className="h-6 w-6 rotate-0 scale-100 transition-all dark:text-white"
           data-oid=":_b94hm"
         />
       ) : (
         <Moon
           suppressHydrationWarning
-          className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 text-zinc-700 transition-all"
+          className="h-6 w-6 rotate-0 scale-100 text-black transition-all"
           data-oid="lncmky-"
         />
       )}

@@ -118,6 +118,8 @@ export default function Navbar2() {
         </div>
 
         <div className="hidden lg:flex lg:flex-1 lg:justify-end items-center gap-2">
+          <ThemeToggle />
+
           {/* Cart icon with badge */}
           {session && (
             <Link href="/cart" className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
@@ -130,15 +132,13 @@ export default function Navbar2() {
             </Link>
           )}
 
-          <ThemeToggle />
           
           {!session ? (
-            <>
-              <Button variant="outline" onClick={() => signIn()}>
-                <FcGoogle className="h-5 w-5 mr-3" />
+            <Link href='/auth/signin'>
+              <Button>
                 Login | Register
               </Button>
-            </>
+            </Link>
           ) : (
             <div className="flex items-center gap-4">
               <Menu as="div" className="relative">
@@ -147,7 +147,7 @@ export default function Navbar2() {
                   <img
                     alt={session?.user?.name || "profile"}
                     src={profileImage || profile.src}
-                    className="h-8 w-8 rounded-full bg-zinc-50"
+                    className="h-8 w-8"
                   />
 
                   <span className="hidden lg:flex lg:items-center">
@@ -240,10 +240,11 @@ export default function Navbar2() {
                     </div>
                     <div className="py-6">
                       {!session ? (
+                        <Link href='/auth/signin'>
                         <Button variant="outline" onClick={() => signIn()} className="w-full">
-                          <FcGoogle className="h-5 w-5 mr-3" />
                           Login | Register
                         </Button>
+                        </Link>
                       ) : (
                         <div className="space-y-2">
                           <Button onClick={() => signOut()} className="w-full">Logout</Button>
