@@ -1,4 +1,4 @@
-// app/api/auth/signup/route.js
+// app/api/auth/signup/route.js - FIXED VERSION
 import connectDB from '@/config/database';
 import User from '@/models/User';
 
@@ -55,17 +55,19 @@ export async function POST(request) {
       );
     }
 
-    // Create user (password will be hashed by pre-save hook in User model)
+    // Create user WITHOUT geocoding (user has no address yet)
+    // Geocoding will happen during onboarding when address is provided
     const user = await User.create({
       email: email.toLowerCase().trim(),
       password, // Will be hashed by model's pre-save hook
       storename: storename.trim(),
       authProvider: 'credentials',
-      isOnboarded: false,
-      isEmailVerified: false, // Can add email verification later
+      isOnboarded: false, // User needs to complete onboarding
+      isEmailVerified: false,
+      // Don't set any address/location fields yet
     });
 
-    console.log('User created successfully:', user._id);
+    console.log('User created successfully (no geocoding):', user._id);
 
     return new Response(
       JSON.stringify({

@@ -1,3 +1,4 @@
+// app/auth/signin/page.jsx - FIXED VERSION
 'use client';
 
 import { signIn } from 'next-auth/react';
@@ -30,17 +31,31 @@ export default function SignInPage() {
         email,
         password,
         redirect: false,
+        callbackUrl, // Pass the callback URL
       });
 
       if (result?.error) {
         setError('Invalid email or password');
-      } else {
-        router.push(callbackUrl);
+        setLoading(false);
+      } else if (result?.ok) {
+        // Force redirect using window.location for production reliability
+        window.location.href = callbackUrl;
       }
     } catch (err) {
       setError('Something went wrong');
-    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider) => {
+    try {
+      await signIn(provider, { 
+        callbackUrl,
+        redirect: true // Let NextAuth handle the redirect
+      });
+    } catch (err) {
+      console.error('OAuth sign in error:', err);
+      setError('Failed to sign in');
     }
   };
 
@@ -55,22 +70,15 @@ export default function SignInPage() {
           backgroundAttachment: 'fixed',
         }}
       >
-        {/* Light theme overlay - white to transparent */}
         <div className="absolute inset-0 bg-zinc-50/50 dark:hidden sm:hidden" />
-        
-        {/* Dark theme overlay */}
         <div className="absolute inset-0 bg-zinc-900/80 hidden dark:block sm:hidden" />
-        
-       
         
         <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 sm:bg-white dark:sm:bg-zinc-950 relative z-10">
           <div className="mx-auto w-full max-w-sm lg:w-96">
             <div>
-              
               <h2 className="mt-8 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white">
                 Yay! Glad to see you again
               </h2>
-             
             </div>
 
             <div className="mt-8">
@@ -81,12 +89,13 @@ export default function SignInPage() {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  {/* OAuth Buttons */}
+                  {/* OAuth Buttons - FIXED */}
                   <div className="space-y-3">
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => signIn('google', { callbackUrl })}
+                      onClick={() => handleOAuthSignIn('google')}
+                      type="button"
                     >
                       <FcGoogle className="h-5 w-5 mr-3" />
                       Continue with Google
@@ -95,7 +104,8 @@ export default function SignInPage() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => signIn('facebook', { callbackUrl })}
+                      onClick={() => handleOAuthSignIn('facebook')}
+                      type="button"
                     >
                       <FaFacebook className="h-5 w-5 mr-3 text-blue-600" />
                       Continue with Facebook
@@ -127,6 +137,7 @@ export default function SignInPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        disabled={loading}
                       />
                     </div>
 
@@ -137,6 +148,7 @@ export default function SignInPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={loading}
                       />
                     </div>
 
@@ -163,7 +175,6 @@ export default function SignInPage() {
             src="/cover-image-2.jpg"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          {/* light-theme only gradient overlay: white -> transparent. In dark theme keep transparent */}
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-transparent dark:from-zinc-900/90" />
         </div>
       </div>

@@ -1,4 +1,4 @@
-// models/User.js - Updated with onboarding and password support
+// models/User.js - FIXED to prevent geo index errors on signup
 import { Schema, model, models } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
@@ -13,11 +13,10 @@ const UserSchema = new Schema(
     },
     password: {
       type: String,
-      // Only required for email/password signups
       required: function() {
         return this.authProvider === 'credentials';
       },
-      select: false, // Don't return password by default
+      select: false,
     },
     authProvider: {
       type: String,
@@ -53,13 +52,15 @@ const UserSchema = new Schema(
         'Mpumalanga',
         'Northern Cape',
         'North West',
+        '',
+        null
       ],
     },
     zipCode: {
       type: String,
       validate: {
         validator: function(v) {
-          return !v || /^\d{4}$/.test(v); // SA zip codes are 4 digits
+          return !v || /^\d{4}$/.test(v);
         },
         message: 'ZIP code must be 4 digits'
       }
@@ -81,37 +82,33 @@ const UserSchema = new Schema(
       },
     ],
     
-    // Geospatial fields
+    // Geospatial fields - nullable to prevent index errors
     latitude: {
       type: Number,
       min: -90,
       max: 90,
-      index: '2dsphere',
+      default: null,
     },
     longitude: {
       type: Number,
       min: -180,
       max: 180,
-      index: '2dsphere',
+      default: null,
     },
-    // Store the formatted address returned by geocoding service
     geocodedAddress: {
       type: String,
     },
-    // When the address was last geocoded
     geocodedAt: {
       type: Date,
     },
-    // GeoJSON point for advanced geospatial queries
+    // GeoJSON point - FIXED: make it nullable and only create when coordinates exist
     location: {
       type: {
         type: String,
         enum: ['Point'],
-        default: 'Point',
       },
       coordinates: {
         type: [Number], // [longitude, latitude]
-        index: '2dsphere',
       },
     },
     
@@ -122,14 +119,13 @@ const UserSchema = new Schema(
     },
     onboardingStep: {
       type: Number,
-      default: 0, // Track current step (0 = not started)
+      default: 0,
     },
     
-    // Email verification for credentials signup
+    // Email verification
     isEmailVerified: {
       type: Boolean,
       default: function() {
-        // OAuth users are auto-verified
         return this.authProvider !== 'credentials';
       }
     },
@@ -153,7 +149,6 @@ const UserSchema = new Schema(
 
 // Hash password before saving
 UserSchema.pre('save', async function(next) {
-  // Only hash if password is modified or new
   if (!this.isModified('password')) return next();
   
   if (this.password) {
@@ -163,19 +158,24 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
-// Pre-save middleware to sync location field with lat/lng
+// FIXED: Only create location field if coordinates exist
 UserSchema.pre('save', function(next) {
-  if (this.latitude && this.longitude) {
+  // Only set location if both latitude and longitude exist
+  if (this.latitude != null && this.longitude != null) {
     this.location = {
       type: 'Point',
       coordinates: [this.longitude, this.latitude]
     };
+  } else {
+    // Remove location field if coordinates don't exist
+    this.location = undefined;
   }
   next();
 });
 
-// Add index for geospatial queries
-UserSchema.index({ location: '2dsphere' });
+// FIXED: Create geospatial index only on documents that have location
+// This is a sparse index - only indexes documents that have the location field
+UserSchema.index({ location: '2dsphere' }, { sparse: true });
 
 // Ensure default storename
 UserSchema.pre('save', function (next) {
@@ -220,7 +220,7 @@ UserSchema.methods.isOnboardingComplete = function() {
   );
 };
 
-// Method to find nearby stores
+// Method to find nearby stores - only works if location is set
 UserSchema.statics.findNearby = function(longitude, latitude, maxDistanceKm = 50) {
   return this.find({
     location: {
@@ -229,19 +229,19 @@ UserSchema.statics.findNearby = function(longitude, latitude, maxDistanceKm = 50
           type: 'Point',
           coordinates: [longitude, latitude]
         },
-        $maxDistance: maxDistanceKm * 1000 // Convert km to meters
+        $maxDistance: maxDistanceKm * 1000
       }
     }
   });
 };
 
-// Method to check if user needs re-geocoding (e.g., after 30 days)
+// Method to check if user needs re-geocoding
 UserSchema.methods.needsGeocoding = function() {
   if (!this.latitude || !this.longitude) return true;
   if (!this.geocodedAt) return true;
   
   const daysSinceGeocoding = (Date.now() - this.geocodedAt) / (1000 * 60 * 60 * 24);
-  return daysSinceGeocoding > 30; // Re-geocode after 30 days
+  return daysSinceGeocoding > 30;
 };
 
 const User = models.User || model('User', UserSchema);

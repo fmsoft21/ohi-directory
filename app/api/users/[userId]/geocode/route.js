@@ -1,4 +1,4 @@
-// app/api/users/[id]/geocode/route.js
+// app/api/users/[userId]/geocode/route.js - FIXED VERSION
 import connectDB from '@/config/database';
 import User from '@/models/User';
 import { getServerSession } from 'next-auth';
@@ -68,7 +68,7 @@ export async function POST(request, { params }) {
     console.log('Geocoding address:', addressString);
 
     const geocodeResult = await geocodeAddress(addressString, {
-      preferredProvider: 'nominatim' // Change to 'google', 'mapbox', etc. if you have API keys
+      preferredProvider: 'nominatim'
     });
 
     // Update user with coordinates
@@ -96,13 +96,12 @@ export async function POST(request, { params }) {
   }
 }
 
-// Alternative: Auto-geocode when address is updated
+// PUT - Auto-geocode when address is updated
 export async function PUT(request, { params }) {
   try {
     await connectDB();
     
-    const session = await getServerSession(authOptions
-     );
+    const session = await getServerSession(authOptions);
     
     if (!session) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -132,8 +131,10 @@ export async function PUT(request, { params }) {
       }
     });
 
-    // Auto-geocode if address changed
-    if (addressChanged && user.city && user.province) {
+    // ONLY auto-geocode if address changed AND all required fields are present
+    const hasCompleteAddress = user.address && user.city && user.province;
+    
+    if (addressChanged && hasCompleteAddress) {
       try {
         const addressString = {
           address: user.address,
@@ -154,7 +155,10 @@ export async function PUT(request, { params }) {
       } catch (geocodeError) {
         console.error('Auto-geocode failed:', geocodeError);
         // Don't fail the update if geocoding fails
+        // User can manually trigger geocoding later
       }
+    } else if (addressChanged && !hasCompleteAddress) {
+      console.log('Address incomplete, skipping geocoding');
     }
 
     await user.save();

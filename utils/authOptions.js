@@ -1,11 +1,10 @@
-// utils/authOptions.js - Enhanced with multiple providers
+// utils/authOptions.js - FIXED VERSION with better redirect handling
 import NextAuth from "next-auth/next"
 import GoogleProvider from "next-auth/providers/google"
 import FacebookProvider from "next-auth/providers/facebook"
 import CredentialsProvider from "next-auth/providers/credentials"
 import User from '@/models/User';
 import connectDB from '@/config/database';
-import bcrypt from 'bcryptjs';
 
 export const authOptions = {
   providers: [
@@ -24,7 +23,6 @@ export const authOptions = {
       clientId: process.env.FACEBOOK_CLIENT_ID,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
     }),
-    // Optional: Email/Password authentication
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -34,8 +32,9 @@ export const authOptions = {
       async authorize(credentials) {
         await connectDB();
         
-        // Find user and explicitly select password field
-        const user = await User.findOne({ email: credentials.email.toLowerCase().trim() }).select('+password');
+        const user = await User.findOne({ 
+          email: credentials.email.toLowerCase().trim() 
+        }).select('+password');
         
         if (!user) {
           throw new Error('No user found with this email');
@@ -45,7 +44,6 @@ export const authOptions = {
           throw new Error('This account does not have a password. Please sign in with Google or Facebook.');
         }
         
-        // Use the comparePassword method from the model
         const isPasswordValid = await user.comparePassword(credentials.password);
         
         if (!isPasswordValid) {
@@ -57,6 +55,7 @@ export const authOptions = {
           email: user.email,
           name: user.storename,
           image: user.image,
+          isOnboarded: user.isOnboarded || false,
         };
       }
     })
@@ -66,10 +65,11 @@ export const authOptions = {
     async signIn({ user, account, profile }) {
       await connectDB();
       
-      const userExists = await User.findOne({ email: user.email || profile?.email });
+      const userExists = await User.findOne({ 
+        email: user.email || profile?.email 
+      });
 
       if (!userExists) {
-        // Create new user with onboarding flag
         const emailLocal = (user.email || profile?.email || '').split('@')[0] || '';
         const defaultStoreName = emailLocal
           .replace(/\./g, ' ')
@@ -80,9 +80,8 @@ export const authOptions = {
           email: user.email || profile?.email,
           storename: defaultStoreName,
           image: user.image || profile?.picture,
-          // Flag for onboarding
           isOnboarded: false,
-          authProvider: account.provider, // Track provider
+          authProvider: account.provider,
         });
       }
       
@@ -103,18 +102,16 @@ export const authOptions = {
     },
 
     async jwt({ token, user, account, trigger, session }) {
-      // Initial sign in
       if (user) {
         token.id = user.id;
+        token.isOnboarded = user.isOnboarded;
       }
       
-      // Handle session update (when update() is called)
       if (trigger === 'update' && session) {
         token.isOnboarded = session.user.isOnboarded;
         token.storename = session.user.storename;
       }
       
-      // Fetch latest user data if not already in token
       if (token.email && !token.isOnboarded && token.isOnboarded !== false) {
         try {
           await connectDB();
@@ -129,20 +126,32 @@ export const authOptions = {
       }
       
       return token;
+    },
+
+    // FIXED: Add redirect callback for better control
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     }
   },
 
   pages: {
-    signIn: '/auth/signin',  // Custom sign-in pagegn
-    signUp: '/auth/signup',  // Custom sign-up page
+    signIn: '/auth/signin',
+    signUp: '/auth/signup',
     error: '/auth/error',
-    newUser: '/onboarding',   // Redirect new users here
+    newUser: '/onboarding',
   },
 
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+
+  // ADDED: Debug mode for production troubleshooting
+  debug: process.env.NODE_ENV === 'development',
 }
 
 export default NextAuth(authOptions)

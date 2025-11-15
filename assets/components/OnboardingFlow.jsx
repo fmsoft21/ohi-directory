@@ -154,7 +154,7 @@ export default function OnboardingFlow() {
                       value={formData.storename}
                       onChange={(e) => handleChange('storename', e.target.value)}
                       placeholder="My Awesome Store"
-                      className={errors.storename ? 'border-red-500' : ''}
+                      className={`bg-white/35 dark:bg-black/40 ${errors.storename ? 'border-red-500' : ''}`}
                     />
                     {errors.storename && (
                       <p className="text-sm text-red-500 mt-1">{errors.storename}</p>
@@ -172,7 +172,7 @@ export default function OnboardingFlow() {
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
                       placeholder="0123456789"
-                      className={errors.phone ? 'border-red-500' : ''}
+                      className={`bg-white/35 dark:bg-black/40 ${errors.phone ? 'border-red-500' : ''}` }
                     />
                     {errors.phone && (
                       <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
@@ -196,7 +196,7 @@ export default function OnboardingFlow() {
                     value={formData.address}
                     onChange={(e) => handleChange('address', e.target.value)}
                     placeholder="123 Main Street"
-                    className={errors.address ? 'border-red-500' : ''}
+                    className={`bg-white/35 dark:bg-black/40 ${errors.address ? 'border-red-500' : ''}`}
                   />
                   {errors.address && (
                     <p className="text-sm text-red-500 mt-1">{errors.address}</p>
@@ -211,7 +211,7 @@ export default function OnboardingFlow() {
                       value={formData.city}
                       onChange={(e) => handleChange('city', e.target.value)}
                       placeholder="Johannesburg"
-                      className={errors.city ? 'border-red-500' : ''}
+                      className={`bg-white/35 dark:bg-black/40 ${errors.city ? 'border-red-500' : ''}`}
                     />
                     {errors.city && (
                       <p className="text-sm text-red-500 mt-1">{errors.city}</p>
@@ -225,6 +225,7 @@ export default function OnboardingFlow() {
                       value={formData.zipCode}
                       onChange={(e) => handleChange('zipCode', e.target.value)}
                       placeholder="2000"
+                      className="bg-white/35 dark:bg-black/40"
                     />
                   </div>
                 </div>
@@ -235,12 +236,12 @@ export default function OnboardingFlow() {
                     value={formData.province}
                     onValueChange={(value) => handleChange('province', value)}
                   >
-                    <SelectTrigger className={errors.province ? 'border-red-500' : ''}>
+                    <SelectTrigger className={`bg-white/35 dark:bg-black/40 ${errors.province ? 'border-red-500' : ''}`}>
                       <SelectValue placeholder="Select province" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-none ">
                       {provinces.map((prov) => (
-                        <SelectItem key={prov} value={prov}>
+                        <SelectItem className="cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-600" key={prov} value={prov}>
                           {prov}
                         </SelectItem>
                       ))}
@@ -266,10 +267,10 @@ export default function OnboardingFlow() {
                   value={formData.about}
                   onChange={(e) => handleChange('about', e.target.value)}
                   placeholder="Share what makes your store special..."
-                  className="h-32 resize-none"
+                  className="h-32 resize-none bg-white/35 dark:bg-black/40"
                   maxLength={500}
                 />
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-zinc-600 mt-1">
                   {formData.about.length}/500 characters
                 </p>
               </div>
@@ -280,7 +281,7 @@ export default function OnboardingFlow() {
                 </div>
               )}
 
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-md">
+              {/* <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-md">
                 <div className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5" />
                   <div className="flex-1">
@@ -292,7 +293,7 @@ export default function OnboardingFlow() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           )}
 
