@@ -46,19 +46,35 @@ export default function SignInPage() {
 
   return (
     <>
-      <div className="flex min-h-full flex-1 dark:from-zinc-900 dark:to-zinc-800">
-        <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+      <div 
+        className="flex min-h-full flex-1 sm:bg-none relative overflow-hidden"
+        style={{
+          backgroundImage: 'url(/portrait.avif)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        {/* Light theme overlay - white to transparent */}
+        <div className="absolute inset-0 bg-zinc-50/50 dark:hidden sm:hidden" />
+        
+        {/* Dark theme overlay */}
+        <div className="absolute inset-0 bg-zinc-900/80 hidden dark:block sm:hidden" />
+        
+       
+        
+        <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 sm:bg-white dark:sm:bg-zinc-950 relative z-10">
           <div className="mx-auto w-full max-w-sm lg:w-96">
             <div>
               
-              <h2 className="mt-12 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white">
+              <h2 className="mt-8 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white">
                 Yay! Glad to see you again
               </h2>
              
             </div>
 
             <div className="mt-8">
-              <Card className="w-full border-none bg-zinc-100 dark:bg-zinc-800">
+              <Card className="w-full border-none bg-zinc-300/30 backdrop-blur-md dark:bg-zinc-900/30">
                 <CardHeader className="text-center">
                   <CardTitle className="text-lg">Welcome back</CardTitle>
                   <p className="text-sm text-muted-foreground">Sign in to continue to your dashboard</p>

@@ -129,7 +129,7 @@ export default function OnboardingFlow() {
 
       <div className="absolute inset-0 bg-zinc-50/30 dark:bg-black/40" />
       <div className="relative z-10 w-full max-w-6xl px-4">
-      <Card className="border-none bg-zinc-100/80 shadow-lg dark:bg-black/70 px-6 py-6 sm:px-10 lg:px-16 lg:py-6 lg:mt-10 max-w-3xl mx-auto">
+      <Card className="border-none bg-zinc-300/10 backdrop-blur-md shadow-lg dark:bg-black/40 dark:backdrop-blur-md px-6 py-6 sm:px-10 lg:px-16 lg:py-6 lg:mt-10 max-w-3xl mx-auto">
         <CardHeader>
           <div className="flex flex-row items-center justify-between">
             <CardTitle className="text-2xl">Welcome! </CardTitle>

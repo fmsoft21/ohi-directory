@@ -6,7 +6,7 @@ const Footer = () => {
 
   return (
     <footer
-      className="hidden bg-gray-200 dark:bg-zinc-950 dark:text-white py-4 mt-auto bottom-0 left-0 right-0"
+      className="hidden sm:block bg-gray-200 dark:bg-zinc-950 dark:text-white py-4 mt-auto bottom-0 left-0 right-0"
       data-oid="kl6wtmh"
     >
       <div
