@@ -28,14 +28,16 @@ const stats = [
 
   return (
     <section>
-    <div className="relative isolate overflow-hidden bg-white dark:bg-zinc-900 py-24 sm:py-20">
+      <div className="relative isolate overflow-hidden pb-10 -mt-8 sm:py-20">
       <Image
         height={1500}
         width={2830}
         alt=""
         src="/background.jpg"
-        className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center opacity-50 dark:opacity-20"
+        className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center"
       />
+        <div className="absolute inset-0 -z-10 bg-white/10 dark:bg-black/80 backdrop-blur-md"></div>
+
        <div
             className="h-10 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"
             data-oid="bjik9br"

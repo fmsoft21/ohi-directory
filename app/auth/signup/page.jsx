@@ -135,7 +135,7 @@ export default function SignUpPage() {
         <div className="absolute inset-0 bg-zinc-900/80 hidden dark:block sm:hidden" />
 
 
-        <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 sm:bg-white dark:sm:bg-zinc-950 relative z-10">
+        <div className="flex flex-1 flex-col justify-center px-4 mb-20 sm:px-6 lg:flex-none lg:px-20 xl:px-24 sm:bg-white dark:sm:bg-zinc-950 relative z-10">
           <div className="mx-auto w-full max-w-sm lg:w-96">
             
 

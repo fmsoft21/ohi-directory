@@ -95,7 +95,7 @@ const ProductCard = ({ product }) => {
             }
           </span>
           {product?.discountPercentage > 0 && (
-            <span className="ml-2 text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 px-2 py-1 rounded">
+            <span className="inline-flex ml-2 text-xs bg-red-100 dark:bg-red-700 text-red-600 dark:text-red-200 px-2 py-1 rounded">
               -{product.discountPercentage}% OFF
             </span>
           )}

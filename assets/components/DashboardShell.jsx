@@ -36,6 +36,7 @@ import {
   Package,
   Search,
   Send,
+  ShoppingBag,
   UserIcon,
 } from "lucide-react";
 import {
@@ -62,39 +63,43 @@ function classNames(...classes) {
 export default function DashboardShell({ children }) {
   const { unreadCount } = useMessages();
 
-
   const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: HomeIcon, current: true },
-  {
-    name: "Profile",
-    href: "/dashboard/profile",
-    icon: UserIcon,
-    current: false,
-  },
-  {
-    name: "Products",
-    href: "/dashboard/products",
-    icon: Package,
-    current: false,
-  },
-  {
-    name: "Orders",
-    href: "/dashboard/orders",
-    icon: CalendarIcon,
-    current: false,
-  },
-  {
-    name: "Messages",
-    href: "/dashboard/messages",
-    icon: Send,
-    badge: unreadCount > 0 ? unreadCount : null,
-    current: false,
-  },
-];
+    { name: "Dashboard", href: "/dashboard", icon: HomeIcon, current: true },
+    {
+      name: "Profile",
+      href: "/dashboard/profile",
+      icon: UserIcon,
+      current: false,
+    },
+    {
+      name: "Products",
+      href: "/dashboard/products",
+      icon: Package,
+      current: false,
+    },
+    {
+      name: "Orders",
+      href: "/dashboard/orders",
+      icon: CalendarIcon,
+      current: false,
+    },
+    {
+      name: "Messages",
+      href: "/dashboard/messages",
+      icon: Send,
+      badge: unreadCount > 0 ? unreadCount : null,
+      current: false,
+    },
+    {
+      name: "Purchases",
+      href: "/dashboard/purchases",
+      icon: ShoppingBag,
+      current: false,
+    },
+  ];
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-
 
   // determine the most specific matching navigation item for the current pathname
   const activeHref = React.useMemo(() => {
