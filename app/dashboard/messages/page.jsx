@@ -70,11 +70,7 @@ export default function MessagesPage() {
   return (
     <DashboardShell>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-<<<<<<< HEAD
         <Card className="-mt-5 md:col-span-2 lg:col-span-3 border-none bg-zinc-100 dark:bg-zinc-900">
-=======
-        <Card className="md:col-span-2 lg:col-span-3 border-none bg-zinc-100 dark:bg-zinc-900">
->>>>>>> 19b4b30874cbbaf099e124cd3a7c632e9a03eab1
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Messages</span>

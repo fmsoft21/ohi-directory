@@ -144,22 +144,13 @@ export default function ConversationPage() {
 
   if (loading) {
     return (
-<<<<<<< HEAD
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-=======
-      <DashboardShell>
-        <div className="flex justify-center items-center h-[calc(100vh-200px)]">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </DashboardShell>
->>>>>>> 19b4b30874cbbaf099e124cd3a7c632e9a03eab1
     );
   }
 
   return (
-<<<<<<< HEAD
     <>
       {/* Hide top navbar but keep bottom nav */}
       <style>{`
@@ -272,112 +263,5 @@ export default function ConversationPage() {
       </div>
     </div>
     </>
-=======
-    <DashboardShell>
-      <div className="h-screen md:h-[calc(100vh-140px)] -mt-4 mb-6 sm:-mb-4 flex flex-col bg-transparent rounded-lg overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b  border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard/messages")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            
-            <Avatar>
-              <AvatarImage src={otherUser?.image || "/profile.png"} />
-              <AvatarFallback>
-                {otherUser?.storename?.[0] || "U"}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div>
-              <h2 className="text-lg font-semibold">
-                {otherUser?.storename}
-              </h2>
-              {conversation?.product && (
-                <p className="text-sm text-muted-foreground">
-                  About: {conversation.product.title}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDeleteConversation}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-          >
-            <Trash2 className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-white dark:bg-zinc-800">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mb-4" />
-              <p>No messages yet. Start the conversation!</p>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isOwn = message.sender._id === session?.user?.id;
-              return (
-                <div
-                  key={message._id}
-                  className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] sm:max-w-[70%] rounded-lg p-3 ${
-                      isOwn
-                        ? "bg-emerald-600 text-white"
-                        : "bg-gray-200 dark:bg-zinc-700 text-gray-900 dark:text-white"
-                    }`}
-                  >
-                    <p className="text-sm break-words">{message.content}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        isOwn ? "text-emerald-100" : "text-muted-foreground"
-                      }`}
-                    >
-                      {formatTime(message.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Message Input */}
-        <div className="p-4 -mb-1 sm:p-6 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              disabled={sending}
-              className="text-sm sm:text-base"
-            />
-            <Button 
-              type="submit" 
-              disabled={sending || !newMessage.trim()}
-              size="icon"
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </form>
-        </div>
-      </div>
-    </DashboardShell>
->>>>>>> 19b4b30874cbbaf099e124cd3a7c632e9a03eab1
   );
 }
