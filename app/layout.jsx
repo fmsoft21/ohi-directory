@@ -4,7 +4,7 @@ import {
   Inter,
   Manrope,
   Zalando_Sans_SemiExpanded,
-  Raleway
+  Raleway,
 } from "next/font/google";
 import "@/assets/styles/globals.css";
 import Footer from "@/assets/components/Footer";
@@ -12,6 +12,7 @@ import Providers from "@/assets/components/Providers";
 import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/assets/components/Navbar2";
 import DisableZoom from "@/app/DisableZoom";
+import MobileLayoutWrapper from "@/assets/components/MobileLayoutWrapper";
 
 const font = Zalando_Sans_SemiExpanded({ subsets: ["latin"], weight: "400" });
 
@@ -20,19 +21,19 @@ export const metadata = {
   description: "Find home businesses near you or anywhere around South Africa.",
   keywords:
     "home businesses, home industry, home stores, home store near me, home business near me, home store near me",
-  manifest: '/manifest.json',
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
-    title: 'Ohi!',
+    statusBarStyle: "default",
+    title: "Ohi!",
   },
 };
 
 export const viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#059669',
+  themeColor: "#059669",
 };
 
 const MainLayout = ({ children }) => {
@@ -41,8 +42,10 @@ const MainLayout = ({ children }) => {
       <body suppressHydrationWarning className={font.className}>
         <Providers>
           <DisableZoom />
-          <Navbar/>
-          <div suppressHydrationWarning>{children}</div>
+          <Navbar />
+          <MobileLayoutWrapper>
+            <div suppressHydrationWarning>{children}</div>
+          </MobileLayoutWrapper>
           <Footer />
           <Toaster />
         </Providers>

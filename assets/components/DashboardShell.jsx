@@ -319,7 +319,7 @@ export default function DashboardShell({ children }) {
           </div>
         </div>
 
-        <div className="lg:pl-72 mt-20" data-oid="lbcqr2x">
+        <div className="lg:pl-72 sm:mt-20" data-oid="lbcqr2x">
           <div
             className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-gray-800 bg-zinc-100 dark:bg-zinc-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8"
             data-oid="3amid.4"
@@ -365,6 +365,7 @@ export default function DashboardShell({ children }) {
                 ))}
               </BreadcrumbList>
             </Breadcrumb>
+
             <div className="relative flex-1 md:flex-initial" data-oid="gmtr_wq">
               <Search
                 className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground"
