@@ -1,17 +1,3 @@
-/*
-  This example requires some changes to your config:
-  
-  ```
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ],
-  }
-  ```
-*/
 "use client";
 
 import React, { useState } from "react";
@@ -45,12 +31,39 @@ import Image from "next/image";
 import logo from "@/public/logo.png";
 import AddProductForm from "./AddProductForm";
 import { usePathname } from "next/navigation";
-import { MessageSquareReplyIcon, Package, Search, Send, UserIcon } from "lucide-react";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import {
+  MessageSquareReplyIcon,
+  Package,
+  Search,
+  Send,
+  UserIcon,
+} from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { useMessages } from "@/assets/contexts/MessagesContext";
 
-const navigation = [
+const breadcrumbs = [
+  { label: "Dashboard", link: "/dashboard" },
+  { label: "Products", link: "/dashboard/products" },
+  { label: "Edit Products", link: "/dashboard/products" },
+];
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export default function DashboardShell({ children }) {
+  const { unreadCount } = useMessages();
+
+
+  const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: HomeIcon, current: true },
   {
     name: "Profile",
@@ -64,29 +77,24 @@ const navigation = [
     icon: Package,
     current: false,
   },
-  { name: "Orders", href: "/dashboard/orders", icon: CalendarIcon, current: false },
-  { name: "Messages", href: "/dashboard/messages", icon: Send, current: false },
-  { name: "Reports", href: "#", icon: ChartPieIcon, current: false },
+  {
+    name: "Orders",
+    href: "/dashboard/orders",
+    icon: CalendarIcon,
+    current: false,
+  },
+  {
+    name: "Messages",
+    href: "/dashboard/messages",
+    icon: Send,
+    badge: unreadCount > 0 ? unreadCount : null,
+    current: false,
+  },
 ];
 
-const userNavigation = [
-  { name: "Your profile", href: "#" },
-  { name: "Sign out", href: "#" },
-];
-
-const breadcrumbs = [
-    { label: "Dashboard", link: "/dashboard" },
-    { label: "Products", link: "/dashboard/products" },
-    { label: "Edit Products", link: "/dashboard/products" },
-  ];
-
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
-
-export default function DashboardShell({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+
 
   // determine the most specific matching navigation item for the current pathname
   const activeHref = React.useMemo(() => {
@@ -94,7 +102,7 @@ export default function DashboardShell({ children }) {
     let best = null;
     for (const item of navigation) {
       if (!item.href) continue;
-      if (pathname === item.href || pathname.startsWith(item.href + '/')) {
+      if (pathname === item.href || pathname.startsWith(item.href + "/")) {
         if (!best || item.href.length > best.length) best = item.href;
       }
     }
@@ -192,26 +200,30 @@ export default function DashboardShell({ children }) {
                             <a
                               href={item.href}
                               className={classNames(
-                                // derive active state from pathname (activeHref) instead of the static item.current
                                 item.href === activeHref
                                   ? "bg-emerald-600 text-white"
-                                  : "text-gray-600 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white",
-                                "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
+                                  : "text-gray-600 dark:text-gray-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-emerald-600 dark:hover:text-emerald-600",
+                                "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 items-center justify-between"
                               )}
                             >
-                              <item.icon
-                                aria-hidden="true"
-                                className="h-6 w-6 shrink-0"
-                                data-oid="143zknh"
-                              />
-
-                              {item.name}
+                              <div className="flex items-center gap-x-3">
+                                <item.icon
+                                  aria-hidden="true"
+                                  className="h-6 w-6 shrink-0"
+                                />
+                                {item.name}
+                              </div>
+                              {item.badge > 0 && (
+                                <span className="bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                  {item.badge > 9 ? "9+" : item.badge}
+                                </span>
+                              )}
                             </a>
                           </li>
                         ))}
                       </ul>
                     </li>
-                    
+
                     <li className="mt-auto">
                       <a
                         href="#"
@@ -271,7 +283,7 @@ export default function DashboardShell({ children }) {
                             item.href === activeHref
                               ? "bg-emerald-600 text-white"
                               : "text-gray-600 dark:text-gray-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-emerald-600 dark:hover:text-emerald-600",
-                            "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
+                            "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6"
                           )}
                           data-oid="mchmei0"
                         >
@@ -287,7 +299,7 @@ export default function DashboardShell({ children }) {
                     ))}
                   </ul>
                 </li>
-               
+
                 <li className="mt-auto" data-oid="0he6ue_">
                   <a
                     href="#"
@@ -336,36 +348,36 @@ export default function DashboardShell({ children }) {
             />
 
             <Breadcrumb className="hidden md:flex" data-oid="_yrxgfj">
-                    <BreadcrumbList data-oid=":zmsqti">
-                      {breadcrumbs.map((breadcrumb, index) => (
-                        <React.Fragment key={index}>
-                          <BreadcrumbItem data-oid="5n:kyqx">
-                            <BreadcrumbLink asChild data-oid="2uu6fgf">
-                              <Link href={breadcrumb.link} data-oid="4ad6frt">
-                                {breadcrumb.label}
-                              </Link>
-                            </BreadcrumbLink>
-                          </BreadcrumbItem>
-                          {index < breadcrumbs.length - 1 && (
-                            <BreadcrumbSeparator data-oid="syn:9o:" />
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </BreadcrumbList>
-                  </Breadcrumb>
-                  <div className="relative flex-1 md:flex-initial" data-oid="gmtr_wq">
-                            <Search
-                              className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground"
-                              data-oid="ppao1.4"
-                            />
-                  
-                            <Input
-                              type="search"
-                              placeholder="Search..."
-                              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px] md:justify-end"
-                              data-oid="9txto_f"
-                            />
-                          </div>
+              <BreadcrumbList data-oid=":zmsqti">
+                {breadcrumbs.map((breadcrumb, index) => (
+                  <React.Fragment key={index}>
+                    <BreadcrumbItem data-oid="5n:kyqx">
+                      <BreadcrumbLink asChild data-oid="2uu6fgf">
+                        <Link href={breadcrumb.link} data-oid="4ad6frt">
+                          {breadcrumb.label}
+                        </Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    {index < breadcrumbs.length - 1 && (
+                      <BreadcrumbSeparator data-oid="syn:9o:" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+            <div className="relative flex-1 md:flex-initial" data-oid="gmtr_wq">
+              <Search
+                className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground"
+                data-oid="ppao1.4"
+              />
+
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px] md:justify-end"
+                data-oid="9txto_f"
+              />
+            </div>
           </div>
 
           <main className="py-10" data-oid="3:gsqly">

@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Mail, Calendar, Store } from "lucide-react";
 import ProductCard from "@/assets/components/ProductCard";
 import Loading from "@/app/loading";
+import ChatWithSellerButton from "@/assets/components/ChatWithSellerButton";
+
 
 const StoreDetailPage = () => {
   const { id } = useParams();
@@ -116,7 +118,14 @@ const StoreDetailPage = () => {
                     )}
                   </div>
                 </div>
-
+                    <div className="mt-4 pt-4 border-t">
+  <ChatWithSellerButton 
+    sellerId={store._id}
+    storeId={store._id}
+    className="w-full"
+    variant="outline"
+  />
+</div>
                 <div className="border-t pt-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
@@ -129,7 +138,7 @@ const StoreDetailPage = () => {
             </Card>
           </div>
         </div>
-
+                    
         {/* Products section */}
         <div className="py-8">
           <div className="mb-6 text-center">
