@@ -1,5 +1,7 @@
 import React from 'react';
 import ProductCard from '@/assets/components/ProductCard';
+import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 // Reusable FilterAndSort component
 // Props:
@@ -72,9 +74,9 @@ export default function FilterAndSort({ products = [], renderResults }) {
     }
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
         {items.map((p, i) => (
-          <ProductCard key={p.id || p._id || i} product={p} />
+          <ProductCard className="bg-amber-400" key={p.id || p._id || i} product={p} />
         ))}
       </div>
     );
@@ -83,35 +85,37 @@ export default function FilterAndSort({ products = [], renderResults }) {
   return (
     <div className="mb-6">
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center mb-6">
-        <input
+        <Input
           aria-label="Search products"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name or description"
-          className="w-full md:w-2/3 px-3 py-2 rounded border dark:bg-zinc-900 dark:text-white bg-white text-gray-900"
+          className="w-full md:w-2/3 px-3 py-2 rounded-md border"
         />
 
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full md:w-1/6 pl-3 pr-10 py-2 rounded border dark:bg-zinc-900 dark:text-white bg-white text-gray-900"
-        >
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {capitalize(c)}
-            </option>
-          ))}
-        </select>
+        <Select  value={category} onValueChange={setCategory}>
+          <SelectTrigger className="w-full md:w-1/6">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50' >
+            {categories.map((c) => (
+              <SelectItem className='hover:bg-emerald-600 cursor-pointer' key={c} value={c}>
+                {capitalize(c)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="w-full md:w-1/6 px-3 py-2 rounded border dark:bg-zinc-900 dark:text-white bg-white text-gray-900"
-        >
-          <option value="latest">Newest</option>
-          <option value="price-asc">Price: Low → High</option>
-          <option value="price-desc">Price: High → Low</option>
-        </select>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-full md:w-1/6">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50'>
+            <SelectItem className='hover:bg-emerald-600 cursor-pointer' value="latest">Newest</SelectItem>
+            <SelectItem className='hover:bg-emerald-600 cursor-pointer' value="price-asc">Price: Low → High</SelectItem>
+            <SelectItem className='hover:bg-emerald-600 cursor-pointer' value="price-desc">Price: High → Low</SelectItem>
+          </SelectContent>
+        </Select>
 
         <button
           type="button"

@@ -47,10 +47,10 @@ export default function Navbar2() {
 
   return (
     <>
-      <header className={`absolute inset-x-0 top-0 z-50 ${hideNavbarOnMobile ? 'hidden lg:block' : ''}`}>
-        <nav aria-label="Global" className="flex items-center justify-between p-6 lg:px-8">
+      <header className={`absolute inset-x-0 top-0 z-50 ${hideNavbarOnMobile ? 'hidden sm:block' : ''}`}>
+        <nav aria-label="Global" className="flex items-center justify-between p-6 sm:px-8">
           {/* Mobile: Centered logo with ThemeToggle on left */}
-          <div className="flex lg:hidden w-full items-center justify-between">
+          <div className="flex sm:hidden w-full items-center justify-between">
             <ThemeToggle />
             <Link href="/" className="flex-1 flex justify-center">
               <span className="sr-only">Ohi!</span>
@@ -60,7 +60,7 @@ export default function Navbar2() {
           </div>
 
           {/* Desktop: Logo on left */}
-          <div className="hidden lg:flex lg:flex-1">
+          <div className="hidden sm:flex sm:flex-1">
             <Link href="/" className="-m-1.5 p-1.5">
               <span className="sr-only">Ohi!</span>
               <Image src={logo} alt="logo" className="h-10 w-auto dark:invert" />
@@ -68,15 +68,15 @@ export default function Navbar2() {
           </div>
 
           {/* Desktop navigation */}
-          <div className="hidden lg:flex lg:gap-x-12">
+          <div className="hidden sm:flex sm:gap-x-12">
             {navigation.map((item) => (
-              <Link key={item.id} href={item.link} className="text-sm/6 font-semibold dark:text-gray-50 text-gray-900 dark:hover:text-emerald-600 hover:text-emerald-600">
+              <Link key={item.id} href={item.link} className="text-sm/6 dark:text-gray-50 text-gray-900 dark:hover:text-emerald-600 hover:text-emerald-600">
                 {item.text}
               </Link>
             ))}
           </div>
 
-          <div className="hidden lg:flex lg:flex-1 lg:justify-end items-center gap-2">
+          <div className="hidden sm:flex sm:flex-1 sm:justify-end items-center gap-2">
             <ThemeToggle />
 
             {/* Cart icon with badge */}
@@ -93,7 +93,7 @@ export default function Navbar2() {
 
             {!session ? (
               <Link href='/auth/signin'>
-                <Button>
+                <Button variant="outline" className="cursor-pointer">
                   Login | Register
                 </Button>
               </Link>
@@ -107,7 +107,7 @@ export default function Navbar2() {
                       src={profileImage || "/profile.png"}
                       className="h-8 w-8 rounded-full"
                     />
-                    <span className="hidden lg:flex lg:items-center">
+                    <span className="hidden sm:flex sm:items-center">
                       <span aria-hidden="true" className="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-50">
                         {session?.user?.name}
                       </span>
@@ -153,26 +153,26 @@ export default function Navbar2() {
       </header>
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Mobile" className="fixed inset-x-0 bottom-0 z-50 rounded-t-xl bg-white dark:bg-zinc-900 lg:hidden">
+      <nav aria-label="Mobile" className="fixed inset-x-0 bottom-0 z-50 rounded-t-xl bg-white/10 dark:bg-zinc-900/10 backdrop-blur-md lg:hidden">
         <div className="max-w-3xl mx-auto px-4">
           <div className="flex justify-between items-center h-14">
-            <Link href="/" className={`flex flex-col items-center justify-center text-xs ${pathname === '/' ? 'text-emerald-600' : 'text-gray-700 dark:text-gray-200'}`}>
+            <Link href="/" className={`flex flex-col items-center justify-center text-xs ${pathname === '/' ? 'text-emerald-600' : 'text-gray-800 dark:text-gray-200'}`}>
               <Home className="h-5 w-5" />
               <span className="mt-1">Home</span>
             </Link>
 
-            <Link href="/stores" className={`flex flex-col items-center justify-center text-xs ${pathname === '/stores' ? 'text-emerald-600' : 'text-gray-700 dark:text-gray-200'}`}>
+            <Link href="/stores" className={`flex flex-col items-center justify-center text-xs ${pathname === '/stores' ? 'text-emerald-600' : 'text-gray-800 dark:text-gray-200'}`}>
               <ShoppingBag className="h-5 w-5" />
               <span className="mt-1">Stores</span>
             </Link>
 
-            <Link href="/products" className={`flex flex-col items-center justify-center text-xs ${pathname === '/products' ? 'text-emerald-600' : 'text-gray-700 dark:text-gray-200'}`}>
+            <Link href="/products" className={`flex flex-col items-center justify-center text-xs ${pathname === '/products' ? 'text-emerald-600' : 'text-gray-800 dark:text-gray-200'}`}>
               <Box className="h-5 w-5" />
               <span className="mt-1">Products</span>
             </Link>
 
             {session && (
-              <Link href="/cart" className={`flex flex-col items-center justify-center text-xs relative ${pathname === '/cart' ? 'text-emerald-600' : 'text-gray-700 dark:text-gray-200'}`}>
+              <Link href="/cart" className={`flex flex-col items-center justify-center text-xs relative ${pathname === '/cart' ? 'text-emerald-600' : 'text-gray-800 dark:text-gray-200'}`}>
                 <ShoppingBag className="h-5 w-5" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
@@ -183,7 +183,7 @@ export default function Navbar2() {
               </Link>
             )}
 
-            <Link href={session ? '/dashboard' : '/auth/signin'} className={`flex flex-col items-center justify-center text-xs ${pathname?.startsWith('/dashboard') ? 'text-emerald-600' : 'text-gray-700 dark:text-gray-200'}`}>
+            <Link href={session ? '/dashboard' : '/auth/signin'} className={`flex flex-col items-center justify-center text-xs ${pathname?.startsWith('/dashboard') ? 'text-emerald-600' : 'text-gray-800 dark:text-gray-200'}`}>
               <User className="h-5 w-5" />
               <span className="mt-1">Profile</span>
             </Link>

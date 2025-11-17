@@ -27,7 +27,7 @@ const stats = [
 ]
 
   return (
-    <section>
+    <section className="bg-radial-[at_bottom] from-zinc-900/30  to-emerald-800/30">
       <div className="relative isolate overflow-hidden pb-10 -mt-8 sm:py-20">
       <Image
         height={1500}
@@ -75,7 +75,7 @@ const stats = [
 
       <ShopByCategory />
 
-      <div className="bg-zinc-100 dark:bg-zinc-900 m-4 rounded-lg p-4" data-oid="4z4mxwh">
+      <div className="m-4 rounded-lg p-4" data-oid="4z4mxwh">
         <FilterAndSort products={products} />
       </div>
     </section>

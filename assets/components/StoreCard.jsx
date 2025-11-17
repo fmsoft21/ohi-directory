@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Heart, MapPin, Store } from "lucide-react";
+import { Eye, Heart, MapPin, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -27,10 +27,11 @@ const StoreCard = ({ shop, onLike, isHighlighted }) => {
     //     ${(animate || hovered) ? 'ring-2 ring-emerald-500 shadow-emerald-200 dark:shadow-emerald-900' : 'border-none'} bg-zinc-100 dark:bg-zinc-800 flex flex-col h-full`
     //   }
     // >
+   <>
     <Card
       id={`store-${shop.id}`}
       
-      className="flex flex-col h-full overflow-hidden rounded-2xl border-none shadow-lg hover:cursor-pointer hover:ring-emerald-600 hover:ring-2 hover:transition-all hover:duration-300">
+      className="flex flex-col h-full overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border-none shadow-lg hover:cursor-pointer hover:ring-emerald-600 hover:ring-2 hover:transition-all hover:duration-300">
       <CardContent className="px-8 py-10 flex-1">
         <div className="flex flex-col items-center text-center">
           {/* Large circular avatar like the Tailwind example */}
@@ -56,15 +57,14 @@ const StoreCard = ({ shop, onLike, isHighlighted }) => {
           <div className="mt-6 flex items-center gap-3">
             <Link href={`/stores/${shop.id}`}>
               <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                <Store className="h-4 w-4 mr-2" />
-                View Store
+                <Eye className="h-4 w-4" />
               </Button>
             </Link>
 
             <Button
               variant="outline"
               onClick={() => onLike(shop.id)}
-              className={`${shop.isLiked ? 'bg-red-500 text-white border-red-500 hover:bg-zinc-800' : 'text-red-500 border-red-500 dark:bg-zinc-800 hover:bg-red-500 hover:text-white'}`}
+              className={`${shop.isLiked ? 'bg-red-500 text-white border-red-500 hover:bg-red-500 hover:text-white' : 'text-red-500 border-red-500 dark:bg-transparent dark:hover:bg-red-500 hover:text-white'}`}
             >
               <Heart className={`h-4 w-4 ${shop.isLiked ? 'fill-current' : ''}`} />
             </Button>
@@ -72,8 +72,8 @@ const StoreCard = ({ shop, onLike, isHighlighted }) => {
         </div>
       </CardContent>
 
-  <CardFooter className="flex p-0 border-t dark:border-gray-700 dark:bg-zinc-900 mt-auto">
-        <div className="flex-1 px-4 py-3 text-center border-r dark:border-gray-700">
+  <CardFooter className="flex p-0 border-t border-gray-800/20 dark:border-gray-800/20 dark:bg-zinc-900/20 mt-auto">
+        <div className="flex-1 px-4 py-3 text-center border-r border-gray-800/20 dark:border-gray-800/20">
           <div className="text-lg font-semibold dark:text-white">{shop.likes}</div>
           <div className="text-sm dark:text-gray-400">Likes</div>
         </div>
@@ -83,6 +83,7 @@ const StoreCard = ({ shop, onLike, isHighlighted }) => {
         </div>
       </CardFooter>
     </Card>
+    </>
   );
 };
 

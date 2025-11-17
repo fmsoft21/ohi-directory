@@ -117,7 +117,7 @@ const ShopByCategory = () => {
   };
 
   return (
-    <div className="bg-zinc-100 dark:bg-zinc-900 py-12 mx-4 my-4 rounded-lg sm:py-14">
+    <div className="bg-zinc-100/40 dark:bg-zinc-900/40 py-12 mx-4 my-4 rounded-lg sm:py-14">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">

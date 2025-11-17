@@ -30,7 +30,6 @@ const OrderItemSchema = new Schema({
   }
 });
 
-
 const ShippingAddressSchema = new Schema({
   fullName: String,
   phone: String,
@@ -44,8 +43,7 @@ const ShippingAddressSchema = new Schema({
 
 const OrderSchema = new Schema(
   {
-    // Order identification
-    buyer: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -55,8 +53,6 @@ const OrderSchema = new Schema(
       unique: true,
       required: true,
     },
-    
-    // Order items
     items: [OrderItemSchema],
     
     // Pricing
@@ -135,22 +131,31 @@ const OrderSchema = new Schema(
   }
 );
 
-// Generate order number
+// Generate unique order number
 OrderSchema.pre('save', async function(next) {
-  if (!this.orderNumber) {
+  if (this.isNew) {
     const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    this.orderNumber = `ORD-${year}${month}${day}-${random}`;
+    this.orderNumber = `ORD${year}${month}${random}`;
   }
   next();
 });
 
-// Indexes for faster queries
-OrderSchema.index({ buyer: 1, createdAt: -1 });
-OrderSchema.index({ seller: 1, createdAt: -1 });
+// Update status history when status changes
+OrderSchema.pre('save', function(next) {
+  if (this.isModified('status')) {
+    this.statusHistory.push({
+      status: this.status,
+      timestamp: new Date(),
+    });
+  }
+  next();
+});
+
+// Index for efficient queries
+OrderSchema.index({ user: 1, createdAt: -1 });
 OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ status: 1 });
 

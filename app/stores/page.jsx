@@ -6,6 +6,7 @@ import Loading from "@/app/loading";
 import Image from "next/image";
 // Use MapLibre (recommended)
 import StoresMapView from '@/assets/components/MapLibreStoresMap';
+import GradientBG from "@/assets/components/GradientBG";
 
 // OR use Mapbox if you have API key
 // import StoresMapView from '@/assets/components/MapboxStoresMap';
@@ -89,9 +90,9 @@ const StoresPage = () => {
   ];
 
   return (
-    <>
+    <div className="bg-radial-[at_bottom] from-white to-emerald-600/30  dark:from-zinc-900/30 dark:to-emerald-800/30">
       {/* Hero Section */}
-      <div className="relative isolate overflow-hidden pb-10 -mt-8 sm:py-20">
+      <div className="relative isolate overflow-hidden pb-10 -mt-8 sm:py-20 ">
         <Image
           height={1500}
           width={2830}
@@ -99,7 +100,7 @@ const StoresPage = () => {
           src="/onboard.jpeg"
           className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center"
         />
-        <div className="absolute inset-0 -z-10 bg-white/10 dark:bg-black/10 backdrop-blur-md"></div>
+        <div className="absolute inset-0 -z-10 bg-white/30 dark:bg-black/10 backdrop-blur-md"></div>
         <div className="h-10 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"></div>
         <div className="h-10 w-3/5 bg-gradient-to-r from-emerald-500 opacity-40 blur-2xl dark:from-emerald-500 dark:opacity-40"></div>
         
@@ -135,6 +136,7 @@ const StoresPage = () => {
       </div>
 
       {/* Map Section */}
+         
       <div className="container-xl lg:container m-auto -mt-8 px-4 sm:px-10 mb-8">
         <StoresMapView 
           stores={stores} 
@@ -143,7 +145,7 @@ const StoresPage = () => {
       </div>
 
       {/* Stores Grid Section */}
-      <div className="container-xl lg:container m-auto p-10">
+      <div className="container-xl lg:container m-auto p-10 ">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2 text-foreground">
             All Stores
@@ -158,8 +160,9 @@ const StoresPage = () => {
           onLike={handleLike}
           selectedStoreId={selectedStoreId}
         />
+        
       </div>
-    </>
+    </div>
   );
 };
 

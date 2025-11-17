@@ -14,7 +14,7 @@ import Navbar from "@/assets/components/Navbar2";
 import DisableZoom from "@/app/DisableZoom";
 import MobileLayoutWrapper from "@/assets/components/MobileLayoutWrapper";
 
-const font = Zalando_Sans_SemiExpanded({ subsets: ["latin"], weight: "400" });
+const font = Zalando_Sans_SemiExpanded({ subsets: ["latin"], weight: "400", display: "swap", variable: "--font-zalando" });
 
 export const metadata = {
   title: "Ohi! | Pitch. Persuade. Procure",

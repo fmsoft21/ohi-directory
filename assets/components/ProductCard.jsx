@@ -7,7 +7,7 @@ import { useCart } from "@/assets/contexts/CartContext";
 import { toast } from "@/components/hooks/use-toast";
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
+import { Eye, ShoppingCart } from 'lucide-react';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -47,11 +47,11 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="group relative border rounded-lg dark:border-gray-700 dark:hover:border-emerald-600 hover:shadow-md hover:border-emerald-600 p-4 sm:p-6">
-      <div className="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-75">
+    <div className="group relative rounded-lg bg-white/40 dark:bg-zinc-800/40 border border-white/40 dark:border-zinc-800/40 hover:border-emerald-600 dark:hover:border-emerald-600 hover:shadow-md transition-all duration-200 p-4 sm:p-6">
+      <div className="aspect-h-1 aspect-w-1 overflow-hidden rounded-lg bg-gray-200 group-hover:opacity-75 h-48 w-full">
         <Image
-          width={400}
-          height={400}
+          width={300}
+          height={256}
           src={imageUrl}
           alt={product?.title || 'Product'}
           className="h-full w-full object-cover object-center"
@@ -100,13 +100,22 @@ const ProductCard = ({ product }) => {
             </span>
           )}
         </p>
+        <div className="mt-6 flex justify-between">
+          <Button 
+          className="rounded-full dark:bg-emerald-800 dark:hover:bg-emerald-700 bg-emerald-600/70 hover:bg-emerald-600/90 hover:cursor-pointer p-3 mt-4 relative z-10" 
+          disabled={product?.stock === 0}
+          onClick={handleAddToCart}
+        >
+          <Eye className="text-gray-900 dark:text-gray-100 h-4 w-4" />
+        </Button>
         <Button 
-          className="rounded-full dark:bg-zinc-800 dark:hover:bg-zinc-700 bg-zinc-100 hover:bg-zinc-200 p-3 mt-4 relative z-10" 
+          className="rounded-full dark:bg-zinc-800 dark:hover:bg-zinc-700 bg-zinc-100 hover:bg-zinc-200 p-3 mt-4 relative z-10 hover:cursor-pointer" 
           disabled={product?.stock === 0}
           onClick={handleAddToCart}
         >
           <ShoppingCart className="text-gray-900 dark:text-gray-100 h-4 w-4" />
         </Button>
+        </div>
       </div>
     </div>
   );

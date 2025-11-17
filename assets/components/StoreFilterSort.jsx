@@ -133,7 +133,7 @@ export default function StoreFilterSort({ stores = [], onLike, selectedStoreId }
               shop={{
                 id: store._id,
                 name: store.storename,
-                avatar: store.image || '/api/placeholder/50/50',
+                avatar: store.image || '/profile.png',
                 likes: store.likes || 0,
                 totalProducts: 0,
                 isLiked: store.isLiked || false,

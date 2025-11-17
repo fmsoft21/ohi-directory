@@ -277,7 +277,7 @@ export default function MapLibreStoresMap({ stores = [], onStoreSelect }) {
   }
   
   return (
-    <div className={`relative mt-12 ${isFullscreen ? 'fixed inset-0 z-50 bg-white dark:bg-zinc-900' : 'mb-8'}`}>
+    <div className={`relative mt-12 rounded-xl ${isFullscreen ? 'fixed inset-0 z-50 bg-white dark:bg-zinc-900' : 'mb-8'}`}>
       {isMobile && !isFullscreen && (
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
