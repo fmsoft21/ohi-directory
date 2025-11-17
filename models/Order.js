@@ -123,8 +123,8 @@ const OrderSchema = new Schema(
     }],
     
     // Notes
-    customerNotes: String,
-    adminNotes: String,
+    buyerNotes: String,
+    sellerNotes: String,
     
     // Cancellation
     cancelledAt: Date,

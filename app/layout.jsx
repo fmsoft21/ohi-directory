@@ -1,5 +1,6 @@
 // app/layout.jsx - Updated with MessagesProvider
 import React from "react";
+import Head from "next/head";
 import {
   Inter,
   Manrope,
@@ -27,6 +28,10 @@ export const metadata = {
     statusBarStyle: "default",
     title: "Ohi!",
   },
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
+  },
 };
 
 export const viewport = {
@@ -34,6 +39,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: "#059669",
+  colorScheme: "light",
 };
 
 const MainLayout = ({ children }) => {

@@ -5,6 +5,7 @@ import { useCart } from '@/assets/contexts/CartContext';
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
 
 export default function CheckoutPage() {
   const { cart, removeFromCart } = useCart();
@@ -75,7 +76,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className=" md:mt-16 bg-white dark:bg-zinc-900">
+    <div className="-mt-16 md:mt-16 bg-white dark:bg-zinc-900">
       {/* Background color split screen for large screens */}
       <div aria-hidden="true" className="fixed left-0 top-0 hidden h-full w-1/2 bg-white dark:bg-zinc-900 lg:block" />
       <div aria-hidden="true" className="fixed right-0 top-0 hidden h-full w-1/2 bg-gray-50 dark:bg-zinc-800 lg:block" />
@@ -188,7 +189,7 @@ export default function CheckoutPage() {
                   Email address
                 </label>
                 <div className="mt-1">
-                  <input
+                  <Input
                     id="email-address"
                     name="email"
                     type="email"
@@ -196,7 +197,7 @@ export default function CheckoutPage() {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-zinc-700 dark:text-white shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
+                    className="block w-full rounded-md  border-gray-300 dark:border-gray-600 dark:bg-zinc-700 dark:text-white shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
                   />
                 </div>
               </div>
@@ -214,7 +215,7 @@ export default function CheckoutPage() {
                     Name on card
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="name-on-card"
                       name="nameOnCard"
                       type="text"
@@ -232,7 +233,7 @@ export default function CheckoutPage() {
                     Card number
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="card-number"
                       name="cardNumber"
                       type="text"
@@ -250,7 +251,7 @@ export default function CheckoutPage() {
                     Expiration date (MM/YY)
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="expiration-date"
                       name="expirationDate"
                       type="text"
@@ -268,7 +269,7 @@ export default function CheckoutPage() {
                     CVC
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="cvc"
                       name="cvc"
                       type="text"
@@ -295,7 +296,7 @@ export default function CheckoutPage() {
                     Company
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="company"
                       name="company"
                       type="text"
@@ -311,7 +312,7 @@ export default function CheckoutPage() {
                     Address
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="address"
                       name="address"
                       type="text"
@@ -329,7 +330,7 @@ export default function CheckoutPage() {
                     Apartment, suite, etc.
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="apartment"
                       name="apartment"
                       type="text"
@@ -345,7 +346,7 @@ export default function CheckoutPage() {
                     City
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="city"
                       name="city"
                       type="text"
@@ -363,7 +364,7 @@ export default function CheckoutPage() {
                     State / Province
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="region"
                       name="region"
                       type="text"
@@ -381,7 +382,7 @@ export default function CheckoutPage() {
                     Postal code
                   </label>
                   <div className="mt-1">
-                    <input
+                    <Input
                       id="postal-code"
                       name="postalCode"
                       type="text"
@@ -403,7 +404,7 @@ export default function CheckoutPage() {
               </h2>
 
               <div className="mt-6 flex items-center">
-                <input
+                <Input
                   id="same-as-shipping"
                   name="sameAsShipping"
                   type="checkbox"

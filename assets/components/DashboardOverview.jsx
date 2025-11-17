@@ -92,7 +92,7 @@ const RecentProducts = ({ products, className }) => {
   return (
     <div className='space-y-4'>
       {products.slice(0, 5).map((product) => (
-          <Link href={`/dashboard/products/edit/${product._id}`}>
+          <Link key={product._id} href={`/dashboard/products/edit/${product._id}`}>
 
         <div
           key={product._id}

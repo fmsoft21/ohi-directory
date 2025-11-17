@@ -1,7 +1,5 @@
 // 'use client'
 import React from "react";
-import DashHeader from "@/assets/components/DashHeader";
-import DashSideNav from "@/assets/components/DashSideNav";
 import EditProductForm from "@/assets/components/EditProductForm";
 import DashboardShell from "@/assets/components/DashboardShell";
 
