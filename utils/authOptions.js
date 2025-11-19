@@ -1,4 +1,4 @@
-// utils/authOptions.js - FIXED VERSION with better redirect handling
+// utils/authOptions.js - FIXED VERSION with admin support
 import NextAuth from "next-auth/next"
 import GoogleProvider from "next-auth/providers/google"
 import FacebookProvider from "next-auth/providers/facebook"
@@ -56,6 +56,8 @@ export const authOptions = {
           name: user.storename,
           image: user.image,
           isOnboarded: user.isOnboarded || false,
+          isAdmin: user.isAdmin || false, // ADDED
+          adminRole: user.adminRole || null, // ADDED
         };
       }
     })
@@ -76,13 +78,21 @@ export const authOptions = {
           .replace(/[^a-z0-9-_]/gi, '')
           .toLowerCase();
 
-        await User.create({
+        const newUser = await User.create({
           email: user.email || profile?.email,
           storename: defaultStoreName,
           image: user.image || profile?.picture,
           isOnboarded: false,
           authProvider: account.provider,
         });
+        
+        // ADDED: Update user object with admin status for new users
+        user.isAdmin = newUser.isAdmin || false;
+        user.adminRole = newUser.adminRole || null;
+      } else {
+        // ADDED: Update user object with existing user's admin status
+        user.isAdmin = userExists.isAdmin || false;
+        user.adminRole = userExists.adminRole || null;
       }
       
       return true;
@@ -96,6 +106,10 @@ export const authOptions = {
         session.user.id = user._id.toString();
         session.user.isOnboarded = user.isOnboarded || false;
         session.user.storename = user.storename;
+        // ADDED: Include admin data in session
+        session.user.isAdmin = user.isAdmin || false;
+        session.user.adminRole = user.adminRole || null;
+        session.user.adminPermissions = user.adminPermissions || [];
       }
       
       return session;
@@ -105,20 +119,29 @@ export const authOptions = {
       if (user) {
         token.id = user.id;
         token.isOnboarded = user.isOnboarded;
+        // ADDED: Include admin data in JWT token
+        token.isAdmin = user.isAdmin || false;
+        token.adminRole = user.adminRole || null;
       }
       
       if (trigger === 'update' && session) {
         token.isOnboarded = session.user.isOnboarded;
         token.storename = session.user.storename;
+        // ADDED: Update admin data on token update
+        token.isAdmin = session.user.isAdmin;
+        token.adminRole = session.user.adminRole;
       }
       
-      if (token.email && !token.isOnboarded && token.isOnboarded !== false) {
+      // ADDED: Refresh admin status from database periodically
+      if (token.email && !token.isAdmin && token.isAdmin !== false) {
         try {
           await connectDB();
           const user = await User.findOne({ email: token.email });
           if (user) {
             token.isOnboarded = user.isOnboarded || false;
             token.storename = user.storename;
+            token.isAdmin = user.isAdmin || false;
+            token.adminRole = user.adminRole || null;
           }
         } catch (error) {
           console.error('JWT callback error:', error);
@@ -128,7 +151,6 @@ export const authOptions = {
       return token;
     },
 
-    // FIXED: Add redirect callback for better control
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
@@ -150,7 +172,6 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  // ADDED: Debug mode for production troubleshooting
   debug: process.env.NODE_ENV === 'development',
 }
 

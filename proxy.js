@@ -72,5 +72,6 @@ export const config = {
     '/onboarding',
     // Auth routes (to redirect if already authenticated)
     '/auth/:path*',
+    '/admin/:path*'
   ],
 };
