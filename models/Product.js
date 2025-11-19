@@ -102,6 +102,15 @@ const ProductSchema = new Schema(
         type: String,
       },
     ],
+    // Admin moderation fields
+    flagged: {
+      type: Boolean,
+      default: false,
+    },
+    flagReason: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -131,6 +140,8 @@ ProductSchema.index({ ownerName: 1 });
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ featured: 1 });
 ProductSchema.index({ status: 1 });
+ProductSchema.index({ flagged: 1 });
+ProductSchema.index({ createdAt: -1 });
 
 // Virtual for getting optimized image URLs (optional)
 ProductSchema.virtual('optimizedImages').get(function() {

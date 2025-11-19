@@ -100,13 +100,36 @@ export const authOptions = {
 
     async session({ session, token }) {
       await connectDB();
-      const user = await User.findOne({ email: session.user.email });
+      
+      // Try to get user from database first
+      let user = await User.findOne({ email: session.user.email });
+      
+      // If user doesn't exist, create a default entry
+      if (!user) {
+        try {
+          const emailLocal = (session.user.email || '').split('@')[0] || '';
+          const defaultStoreName = emailLocal
+            .replace(/\./g, ' ')
+            .replace(/[^a-z0-9-_]/gi, '')
+            .toLowerCase();
+          
+          user = await User.create({
+            email: session.user.email,
+            storename: defaultStoreName,
+            image: session.user.image,
+            isOnboarded: false,
+            authProvider: 'oauth',
+          });
+        } catch (error) {
+          console.error('Error creating user in session callback:', error);
+          return session;
+        }
+      }
       
       if (user) {
         session.user.id = user._id.toString();
         session.user.isOnboarded = user.isOnboarded || false;
         session.user.storename = user.storename;
-        // ADDED: Include admin data in session
         session.user.isAdmin = user.isAdmin || false;
         session.user.adminRole = user.adminRole || null;
         session.user.adminPermissions = user.adminPermissions || [];

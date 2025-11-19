@@ -425,10 +425,10 @@ export default function AdminDashboard() {
                   Manage Products
                 </Button>
               </Link>
-              <Link href="/admin/reports">
+              <Link href="/admin/payments">
                 <Button variant="outline" className="w-full">
                   <TrendingUp className="h-4 w-4 mr-2" />
-                  View Reports
+                  View Payments
                 </Button>
               </Link>
             </div>

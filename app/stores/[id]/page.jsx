@@ -9,7 +9,6 @@ import ProductCard from "@/assets/components/ProductCard";
 import Loading from "@/app/loading";
 import ChatWithSellerButton from "@/assets/components/ChatWithSellerButton";
 
-
 const StoreDetailPage = () => {
   const { id } = useParams();
   const [store, setStore] = useState(null);
@@ -21,10 +20,10 @@ const StoreDetailPage = () => {
     const fetchStoreData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch store details
         const storeResponse = await fetch(`/api/stores/${id}`);
-        if (!storeResponse.ok) throw new Error('Store not found');
+        if (!storeResponse.ok) throw new Error("Store not found");
         const storeData = await storeResponse.json();
         setStore(storeData);
 
@@ -47,20 +46,22 @@ const StoreDetailPage = () => {
   }, [id]);
 
   if (loading) return <Loading />;
-  if (error) return <div className="mt-20 p-8 text-center text-red-500">{error}</div>;
-  if (!store) return <div className="mt-20 p-8 text-center">Store not found</div>;
+  if (error)
+    return <div className="mt-20 p-8 text-center text-red-500">{error}</div>;
+  if (!store)
+    return <div className="mt-20 p-8 text-center">Store not found</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900">
       {/* Cover image */}
       <div className="relative w-full h-80 bg-gray-200 dark:bg-zinc-800">
         <Image
-          src={store.coverImage || '/coverr.jpg'}
+          src={store.coverImage || "/coverr.jpg"}
           alt={`${store.storename} cover`}
           fill
           className="object-cover"
         />
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-transparent dark:from-zinc-900/90" />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-transparent dark:from-zinc-900/90" />
       </div>
 
       {/* Avatar centered and overlapping the cover */}
@@ -68,18 +69,22 @@ const StoreDetailPage = () => {
         <div className="-mt-16 flex flex-col items-center">
           <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 overflow-hidden">
             <Image
-              src={store.image || '/logo.png'}
+              src={store.image || "/logo.png"}
               alt={store.storename}
               fill
               className="object-cover"
             />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mt-4">{store.storename}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mt-4">
+            {store.storename}
+          </h1>
           <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
             {store.city && store.province && (
               <div className="flex items-center gap-2 text-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>{store.city}, {store.province}</span>
+                <span>
+                  {store.city}, {store.province}
+                </span>
               </div>
             )}
             {store.phone && (
@@ -100,7 +105,7 @@ const StoreDetailPage = () => {
                     About Store
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {store.about || 'No description available'}
+                    {store.about || "No description available"}
                   </p>
                 </div>
 
@@ -118,19 +123,20 @@ const StoreDetailPage = () => {
                     )}
                   </div>
                 </div>
-                    <div className="mt-4 pt-4 border-t">
-  <ChatWithSellerButton 
-    sellerId={store._id}
-    storeId={store._id}
-    className="w-full"
-    variant="outline"
-  />
-</div>
+                <div className="mt-4 pt-4 border-t">
+                  <ChatWithSellerButton
+                    sellerId={store._id}
+                    storeId={store._id}
+                    className="w-full"
+                    variant="outline"
+                  />
+                </div>
                 <div className="border-t pt-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      Member since {new Date(store.createdAt).toLocaleDateString()}
+                      Member since{" "}
+                      {new Date(store.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -138,11 +144,13 @@ const StoreDetailPage = () => {
             </Card>
           </div>
         </div>
-                    
+
         {/* Products section */}
         <div className="py-8">
           <div className="mb-6 text-center">
-            <h2 className="text-2xl font-bold">Store Products ({products.length})</h2>
+            <h2 className="text-2xl font-bold">
+              Store Products ({products.length})
+            </h2>
           </div>
 
           {products.length === 0 ? (
@@ -156,7 +164,7 @@ const StoreDetailPage = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}
