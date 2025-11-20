@@ -86,6 +86,7 @@ export const CartProvider = ({ children }) => {
       toast({
         title: "Added to cart",
         description: "Item successfully added to your cart",
+        variant: "success",
       });
       
       return true;

@@ -2,14 +2,19 @@
 import { Popover, PopoverBackdrop, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { ChevronUpIcon } from '@heroicons/react/20/solid'
 import { useCart } from '@/assets/contexts/CartContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
+import { useSession } from 'next-auth/react';
+import { toast } from '@/components/hooks/use-toast';
 
 export default function CheckoutPage() {
   const { cart, removeFromCart } = useCart();
+  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+  const [shippingMethods, setShippingMethods] = useState([]);
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
@@ -24,6 +29,8 @@ export default function CheckoutPage() {
     region: '',
     postalCode: '',
     sameAsShipping: true,
+    shippingMethod: 'standard',
+    paymentMethod: 'payfast',
   });
 
   const handleInputChange = (e) => {
@@ -34,20 +41,117 @@ export default function CheckoutPage() {
     }));
   };
 
+  // Fetch shipping methods when city/province changes
+  useEffect(() => {
+    if (formData.city && formData.region) {
+      fetchShippingMethods();
+    }
+  }, [formData.city, formData.region]);
+
+  const fetchShippingMethods = async () => {
+    try {
+      setIsLoadingShipping(true);
+      const res = await fetch(
+        `/api/checkout?city=${formData.city}&province=${formData.region}`
+      );
+      
+      if (res.ok) {
+        const data = await res.json();
+        setShippingMethods(data.shippingMethods || []);
+        // Set first method as default
+        if (data.shippingMethods?.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            shippingMethod: data.shippingMethods[0].id,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shipping methods:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load shipping methods",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingShipping(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate user is logged in
+    if (!session?.user) {
+      toast({
+        title: "Error",
+        description: "Please sign in to continue checkout",
+        variant: "destructive",
+      });
+      router.push('/auth/signin');
+      return;
+    }
+
+    // Validate form
+    if (!formData.email || !formData.address || !formData.city || !formData.region || !formData.postalCode) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required shipping fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // TODO: Integrate with payment processing (Stripe, PayFast, etc.)
-      console.log('Order submitted:', { cart, formData });
-      
-      // Placeholder for actual checkout processing
-      alert('Order processing not yet implemented. This is a demo.');
-      setIsSubmitting(false);
+      const shippingAddress = {
+        company: formData.company,
+        address: formData.address,
+        apartment: formData.apartment,
+        city: formData.city,
+        region: formData.region,
+        postalCode: formData.postalCode,
+        email: formData.email,
+      };
+
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shippingAddress,
+          shippingMethod: formData.shippingMethod,
+          paymentMethod: formData.paymentMethod,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Checkout failed');
+      }
+
+      toast({
+        title: "Success",
+        description: "Order created successfully",
+      });
+
+      // Handle payment redirection
+      if (formData.paymentMethod === 'payfast' && data.paymentUrl) {
+        // Redirect to PayFast payment
+        window.location.href = data.paymentUrl;
+      } else {
+        // Redirect to order confirmation
+        router.push(`/dashboard/orders/${data.order._id}`);
+      }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Error processing order. Please try again.');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to process checkout',
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -147,12 +251,12 @@ export default function CheckoutPage() {
 
               <PopoverBackdrop
                 transition
-                className="fixed inset-0 bg-black bg-opacity-25 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
+                className="fixed inset-0 bg-black bg-opacity-25 transition-opacity duration-300 ease-linear data-closed:opacity-0"
               />
 
               <PopoverPanel
                 transition
-                className="relative transform bg-white dark:bg-zinc-800 px-4 py-6 transition duration-300 ease-in-out data-[closed]:translate-y-full sm:px-6"
+                className="relative transform bg-white dark:bg-zinc-800 px-4 py-6 transition duration-300 ease-in-out data-closed:translate-y-full sm:px-6"
               >
                 <dl className="mx-auto max-w-lg space-y-6">
                   <div className="flex items-center justify-between">
@@ -397,27 +501,87 @@ export default function CheckoutPage() {
               </div>
             </section>
 
+            {/* Shipping Method */}
+            <section aria-labelledby="shipping-method-heading" className="mt-10">
+              <h2 id="shipping-method-heading" className="text-lg font-medium text-gray-900 dark:text-white">
+                Shipping method
+              </h2>
+
+              {isLoadingShipping ? (
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Loading shipping methods...</p>
+              ) : shippingMethods.length > 0 ? (
+                <fieldset className="mt-6 space-y-4">
+                  {shippingMethods.map((method) => (
+                    <div key={method.id} className="flex items-center">
+                      <input
+                        id={method.id}
+                        name="shippingMethod"
+                        type="radio"
+                        value={method.id}
+                        checked={formData.shippingMethod === method.id}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <label htmlFor={method.id} className="ml-3 flex items-center cursor-pointer">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{method.name}</span>
+                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">R {method.cost.toFixed(2)}</span>
+                        {method.estimatedDays && (
+                          <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">({method.estimatedDays} days)</span>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                </fieldset>
+              ) : (
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">No shipping methods available for this location</p>
+              )}
+            </section>
+
             {/* Billing Information */}
             <section aria-labelledby="billing-heading" className="mt-10">
               <h2 id="billing-heading" className="text-lg font-medium text-gray-900 dark:text-white">
-                Billing information
+                Payment method
               </h2>
 
-              <div className="mt-6 flex items-center">
-                <Input
-                  id="same-as-shipping"
-                  name="sameAsShipping"
-                  type="checkbox"
-                  checked={formData.sameAsShipping}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500"
-                />
-                <div className="ml-2">
-                  <label htmlFor="same-as-shipping" className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    Same as shipping information
+              <fieldset className="mt-6 space-y-4">
+                <div className="flex items-center">
+                  <input
+                    id="payfast"
+                    name="paymentMethod"
+                    type="radio"
+                    value="payfast"
+                    checked={formData.paymentMethod === 'payfast'}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <label htmlFor="payfast" className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
+                    PayFast (Redirect to PayFast payment page)
                   </label>
                 </div>
-              </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="card"
+                    name="paymentMethod"
+                    type="radio"
+                    value="card"
+                    checked={formData.paymentMethod === 'card'}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <label htmlFor="card" className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
+                    Credit/Debit Card (Direct payment)
+                  </label>
+                </div>
+              </fieldset>
+
+              {formData.paymentMethod === 'card' && (
+                <div className="mt-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    ⚠️ Direct card payment is currently in development. Please use PayFast for secure payments.
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* Form Actions */}

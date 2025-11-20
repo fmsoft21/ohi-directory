@@ -140,11 +140,13 @@ export function getAvailableShippingMethods(items, destination) {
 export function validateShippingAddress(address) {
   const errors = [];
 
-  if (!address.fullName || address.fullName.trim().length < 2) {
-    errors.push('Full name is required');
+  // Email is now required instead of fullName
+  if (!address.email || address.email.trim().length < 5) {
+    errors.push('Valid email address is required');
   }
 
-  if (!address.phone || !/^0\d{9}$/.test(address.phone.replace(/\s/g, ''))) {
+  // Phone is optional but if provided, must be valid
+  if (address.phone && !/^0\d{9}$/.test(address.phone.replace(/\s/g, ''))) {
     errors.push('Valid South African phone number required (e.g., 0821234567)');
   }
 
@@ -156,8 +158,10 @@ export function validateShippingAddress(address) {
     errors.push('City is required');
   }
 
-  if (!address.province) {
-    errors.push('Province is required');
+  // Support both 'region' and 'province' field names
+  const province = address.region || address.province;
+  if (!province) {
+    errors.push('Province/State is required');
   }
 
   if (!address.postalCode || !/^\d{4}$/.test(address.postalCode)) {

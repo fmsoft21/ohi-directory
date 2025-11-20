@@ -1,5 +1,4 @@
-import mongoose from "mongoose";
-const { Schema, model, models } = mongoose;
+import { Schema, model, models } from "mongoose";
 
 const ProductSchema = new Schema(
   {
@@ -140,8 +139,6 @@ ProductSchema.index({ ownerName: 1 });
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ featured: 1 });
 ProductSchema.index({ status: 1 });
-ProductSchema.index({ flagged: 1 });
-ProductSchema.index({ createdAt: -1 });
 
 // Virtual for getting optimized image URLs (optional)
 ProductSchema.virtual('optimizedImages').get(function() {

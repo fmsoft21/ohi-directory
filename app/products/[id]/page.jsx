@@ -31,6 +31,8 @@ import {
   OptimizedImage,
 } from "@/assets/components/OptimizedImages";
 import ChatWithSellerButton from "@/assets/components/ChatWithSellerButton";
+import { useCart } from "@/assets/contexts/CartContext";
+import { toast } from "@/components/hooks/use-toast";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -41,7 +43,8 @@ export default function ProductDetails() {
   // refs for touch gesture handling
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
-
+const { addToCart } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
   // useEffect(() => {
   //   const fetchProductData = async () => {
   //     if (!id) return;
@@ -113,6 +116,33 @@ export default function ProductDetails() {
   // };
 
   // const images = getProductImages();
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    
+    if (!product?._id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Product ID not found",
+      });
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      await addToCart(product._id, 1);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+      });
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <>
@@ -282,6 +312,7 @@ export default function ProductDetails() {
                   <Button
                     className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
                     disabled={product.stock === 0}
+                    onClick={handleAddToCart}
                   >
                     Add to Cart
                   </Button>

@@ -1,11 +1,10 @@
-// app/api/admin/products/route.js
+// app/api/admin/products/route.js - FIXED VERSION
 import connectDB from '@/config/database';
 import Product from '@/models/Product';
 import User from '@/models/User';
 import { getSessionUser } from '@/utils/getSessionUser';
 import mongoose from 'mongoose';
 
-// GET - List all products with filters 
 export async function GET(request) {
   try {
     await connectDB();
@@ -18,14 +17,7 @@ export async function GET(request) {
       );
     }
 
-    // Validate that userId is a valid MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(sessionUser.userId)) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid user ID' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
+   
     const user = await User.findById(sessionUser.userId);
     if (!user?.isAdmin) {
       return new Response(
@@ -43,13 +35,14 @@ export async function GET(request) {
 
     let query = {};
 
-    // Only apply status filter if it's explicitly set and not 'all'
+    // FIXED: Better status filtering logic
     if (status && status !== 'all') {
       if (status === 'flagged') {
         query.flagged = true;
       } else if (status === 'active') {
-        query.status = { $in: ['active', undefined, null] };
+        // Products that are NOT flagged and NOT suspended
         query.flagged = { $ne: true };
+        query.status = { $ne: 'suspended' };
       } else if (status === 'suspended') {
         query.status = 'suspended';
       } else if (status === 'lowstock') {
@@ -65,9 +58,11 @@ export async function GET(request) {
       ];
     }
 
-    if (category) {
+    if (category && category !== 'all') {
       query.category = category;
     }
+
+    console.log('Admin Products Query:', JSON.stringify(query, null, 2));
 
     const skip = (page - 1) * limit;
 
@@ -80,6 +75,8 @@ export async function GET(request) {
         .lean(),
       Product.countDocuments(query)
     ]);
+
+    console.log(`Found ${products.length} products out of ${total} total`);
 
     return new Response(
       JSON.stringify({
@@ -96,9 +93,11 @@ export async function GET(request) {
   } catch (error) {
     console.error('Admin products GET error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
-

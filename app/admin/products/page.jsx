@@ -1,6 +1,6 @@
-// app/admin/products/page.jsx
+// app/admin/products/page.jsx - FIXED VERSION
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,12 +46,18 @@ export default function AdminProductsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
-  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
-  const [filters, setFilters] = useState({
-    status: 'all',
-    search: '',
-    category: 'all',
+  const [pagination, setPagination] = useState({ 
+    total: 0, 
+    page: 1, 
+    pages: 1,
+    limit: 20 
   });
+  
+  // FIXED: Separate filter state to prevent infinite loops
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  
   const [actionDialog, setActionDialog] = useState({
     open: false,
     product: null,
@@ -60,42 +66,64 @@ export default function AdminProductsPage() {
   const [actionReason, setActionReason] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    if (session && !session.user.isAdmin) {
-      router.push("/dashboard");
-      return;
-    }
-    fetchProducts();
-  }, [session, filters, pagination.page]);
-
-  const fetchProducts = async () => {
+  // FIXED: Memoized fetch function to prevent infinite loops
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: pagination.page.toString(),
-        limit: '20',
-        ...(filters.status !== 'all' && { status: filters.status }),
-        ...(filters.search && { search: filters.search }),
-        ...(filters.category !== 'all' && { category: filters.category }),
+        limit: pagination.limit.toString(),
       });
 
+      // Only add filters if they're not 'all'
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (searchQuery.trim()) params.append('search', searchQuery.trim());
+      if (categoryFilter !== 'all') params.append('category', categoryFilter);
+
+      console.log('Fetching products with params:', params.toString());
+
       const res = await fetch(`/api/admin/products?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProducts(data.products);
-        setPagination(data.pagination);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch products');
       }
+
+      const data = await res.json();
+      console.log('Received products:', data);
+      
+      setProducts(data.products);
+      setPagination(prev => ({
+        ...prev,
+        total: data.pagination.total,
+        pages: data.pagination.pages
+      }));
     } catch (error) {
       console.error("Error fetching products:", error);
       toast({
         title: "Error",
-        description: "Failed to load products",
+        description: error.message || "Failed to load products",
         variant: "destructive",
       });
+      setProducts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit, statusFilter, searchQuery, categoryFilter]);
+
+  // Check admin access
+  useEffect(() => {
+    if (session && !session.user.isAdmin) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
+
+  // FIXED: Only fetch when page changes or filters change
+  useEffect(() => {
+    if (session?.user?.isAdmin) {
+      fetchProducts();
+    }
+  }, [session?.user?.isAdmin, fetchProducts]);
 
   const handleAction = async (product, action) => {
     if (['suspend', 'flag', 'delete'].includes(action)) {
@@ -108,27 +136,36 @@ export default function AdminProductsPage() {
   const executeAction = async (productId, action) => {
     try {
       setProcessing(true);
+      
+      const method = action === 'delete' ? 'DELETE' : 'PATCH';
+      const body = action === 'delete' 
+        ? undefined 
+        : JSON.stringify({ action, reason: actionReason });
+
       const res = await fetch(`/api/admin/products/${productId}`, {
-        method: action === 'delete' ? 'DELETE' : 'PATCH',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, reason: actionReason }),
+        body,
       });
 
-      if (res.ok) {
-        toast({
-          title: "Success",
-          description: `Product ${action}ed successfully`,
-        });
-        setActionDialog({ open: false, product: null, action: null });
-        setActionReason('');
-        fetchProducts();
-      } else {
-        throw new Error('Action failed');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Action failed');
       }
+
+      toast({
+        title: "Success",
+        description: `Product ${action}ed successfully`,
+      });
+      
+      setActionDialog({ open: false, product: null, action: null });
+      setActionReason('');
+      fetchProducts();
     } catch (error) {
+      console.error('Action error:', error);
       toast({
         title: "Error",
-        description: `Failed to ${action} product`,
+        description: error.message || `Failed to ${action} product`,
         variant: "destructive",
       });
     } finally {
@@ -147,6 +184,17 @@ export default function AdminProductsPage() {
       return <Badge variant="outline" className="text-orange-600">Low Stock</Badge>;
     }
     return <Badge variant="default" className="bg-green-600">Active</Badge>;
+  };
+
+  const handleSearch = () => {
+    // Reset to page 1 when searching
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchProducts();
+  };
+
+  // FIXED: Proper page navigation
+  const goToPage = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -173,15 +221,19 @@ export default function AdminProductsPage() {
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search products..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="pl-9"
                 />
               </div>
               
               <Select
-                value={filters.status}
-                onValueChange={(value) => setFilters({ ...filters, status: value })}
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  setPagination(prev => ({ ...prev, page: 1 }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by status" />
@@ -196,8 +248,11 @@ export default function AdminProductsPage() {
               </Select>
 
               <Select
-                value={filters.category}
-                onValueChange={(value) => setFilters({ ...filters, category: value })}
+                value={categoryFilter}
+                onValueChange={(value) => {
+                  setCategoryFilter(value);
+                  setPagination(prev => ({ ...prev, page: 1 }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Category" />
@@ -211,7 +266,7 @@ export default function AdminProductsPage() {
                 </SelectContent>
               </Select>
 
-              <Button onClick={fetchProducts} variant="default">
+              <Button onClick={handleSearch} variant="default">
                 <Search className="h-4 w-4 mr-2" />
                 Search
               </Button>
@@ -235,6 +290,9 @@ export default function AdminProductsPage() {
               <div className="text-center py-12">
                 <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-muted-foreground">No products found</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Try adjusting your filters
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -257,14 +315,14 @@ export default function AdminProductsPage() {
                           {getStatusBadge(product)}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          By {product.ownerName || product.owner?.storename}
+                          By {product.ownerName || product.owner?.storename || 'Unknown'}
                         </p>
                         <div className="flex items-center gap-4 text-sm mt-1">
                           <span>R {product.price}</span>
                           <span>•</span>
                           <span>Stock: {product.stock}</span>
                           <span>•</span>
-                          <span>{product.category}</span>
+                          <span>{product.category || 'Uncategorized'}</span>
                         </div>
                         {product.flagged && (
                           <p className="text-sm text-red-600 mt-1">
@@ -276,14 +334,8 @@ export default function AdminProductsPage() {
 
                     <div className="flex items-center gap-2">
                       <Link href={`/products/${product._id}`} target="_blank">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" title="View Product">
                           <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      
-                      <Link href={`/admin/products/${product._id}/edit`}>
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
 
@@ -292,6 +344,7 @@ export default function AdminProductsPage() {
                           size="sm"
                           variant="default"
                           onClick={() => handleAction(product, 'approve')}
+                          title="Approve Product"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -300,6 +353,7 @@ export default function AdminProductsPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleAction(product, 'flag')}
+                          title="Flag Product"
                         >
                           <Flag className="h-4 w-4" />
                         </Button>
@@ -310,6 +364,7 @@ export default function AdminProductsPage() {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleAction(product, 'suspend')}
+                          title="Suspend Product"
                         >
                           <Ban className="h-4 w-4" />
                         </Button>
@@ -318,6 +373,7 @@ export default function AdminProductsPage() {
                           size="sm"
                           variant="default"
                           onClick={() => handleAction(product, 'approve')}
+                          title="Reactivate Product"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -327,6 +383,7 @@ export default function AdminProductsPage() {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleAction(product, 'delete')}
+                        title="Delete Product"
                       >
                         <XCircle className="h-4 w-4" />
                       </Button>
@@ -340,14 +397,14 @@ export default function AdminProductsPage() {
             {pagination.pages > 1 && (
               <div className="flex items-center justify-between mt-6">
                 <p className="text-sm text-muted-foreground">
-                  Page {pagination.page} of {pagination.pages}
+                  Page {pagination.page} of {pagination.pages} ({pagination.total} total)
                 </p>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={pagination.page === 1}
-                    onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                    onClick={() => goToPage(pagination.page - 1)}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -355,7 +412,7 @@ export default function AdminProductsPage() {
                     variant="outline"
                     size="sm"
                     disabled={pagination.page === pagination.pages}
-                    onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                    onClick={() => goToPage(pagination.page + 1)}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -395,7 +452,10 @@ export default function AdminProductsPage() {
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setActionDialog({ open: false, product: null, action: null })}
+                onClick={() => {
+                  setActionDialog({ open: false, product: null, action: null });
+                  setActionReason('');
+                }}
                 disabled={processing}
               >
                 Cancel
@@ -403,7 +463,7 @@ export default function AdminProductsPage() {
               <Button
                 variant={actionDialog.action === 'delete' ? 'destructive' : 'default'}
                 onClick={() => executeAction(actionDialog.product?._id, actionDialog.action)}
-                disabled={processing || (actionDialog.action !== 'delete' && !actionReason)}
+                disabled={processing || (actionDialog.action !== 'delete' && !actionReason.trim())}
               >
                 {processing ? (
                   <>
@@ -420,4 +480,4 @@ export default function AdminProductsPage() {
       </div>
     </div>
   );
-} 
+}
