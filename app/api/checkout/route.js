@@ -1,4 +1,4 @@
-// app/api/checkout/route.js - FIXED VERSION
+// app/api/checkout/route.js - ENHANCED VERSION
 import connectDB from '@/config/database';
 import mongoose from 'mongoose';
 import Order from '@/models/Order';
@@ -9,6 +9,20 @@ import { getSessionUser } from '@/utils/getSessionUser';
 import { calculateShipping, estimateDelivery, validateShippingAddress, getAvailableShippingMethods } from '@/utils/shipping';
 import { createPayFastPayment } from '@/utils/payfast';
 
+// Helper function to send JSON responses
+const jsonResponse = (data, status = 200) => {
+  return new Response(
+    JSON.stringify(data),
+    { 
+      status, 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      } 
+    }
+  );
+};
+
 // GET - Get shipping methods for checkout
 export async function GET(request) {
   try {
@@ -16,10 +30,7 @@ export async function GET(request) {
     const sessionUser = await getSessionUser();
 
     if (!sessionUser?.userId) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
     const { searchParams } = new URL(request.url);
@@ -30,44 +41,48 @@ export async function GET(request) {
       .populate('items.product', 'deliveryOptions');
 
     if (!cart || cart.items.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Cart is empty' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Cart is empty' }, 400);
     }
 
     const destination = { city, province };
     const shippingMethods = getAvailableShippingMethods(cart.items, destination);
 
-    return new Response(
-      JSON.stringify({ shippingMethods }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ shippingMethods });
 
   } catch (error) {
     console.error('Checkout GET error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ 
+      error: error.message || 'Failed to fetch shipping methods',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, 500);
   }
 }
 
-// POST - Create orders from cart (FULLY FIXED)
+// POST - Create orders from cart
 export async function POST(request) {
+  let mongoSession = null;
+
   try {
     await connectDB();
     
     const sessionUser = await getSessionUser();
 
     if (!sessionUser?.userId) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Unauthorized - Please sign in' }, 401);
     }
 
-    const body = await request.json();
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return jsonResponse({ 
+        error: 'Invalid request format',
+        details: 'Request body must be valid JSON'
+      }, 400);
+    }
+
     const { shippingAddress, shippingMethod, paymentMethod, customerNotes } = body;
 
     console.log('📦 Checkout initiated:', {
@@ -77,31 +92,36 @@ export async function POST(request) {
       hasAddress: !!shippingAddress
     });
 
-    // Validate shipping address - handle both 'region' and 'province' field names
+    // Validate required fields
+    if (!shippingAddress) {
+      return jsonResponse({ 
+        error: 'Shipping address is required',
+        field: 'shippingAddress'
+      }, 400);
+    }
+
+    // Normalize address - handle both 'region' and 'province' field names
     const normalizedAddress = {
       ...shippingAddress,
-      province: shippingAddress.province || shippingAddress.region,
+      province: shippingAddress.province || shippingAddress.region || '',
+      postalCode: shippingAddress.postalCode || shippingAddress.zipCode || '',
     };
 
+    // Validate shipping address
     const addressValidation = validateShippingAddress(normalizedAddress);
     if (!addressValidation.valid) {
       console.error('❌ Invalid address:', addressValidation.errors);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid shipping address', 
-          details: addressValidation.errors 
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ 
+        error: 'Invalid shipping address', 
+        details: addressValidation.errors,
+        field: 'shippingAddress'
+      }, 400);
     }
 
     // Get buyer details
     const buyer = await User.findById(sessionUser.userId);
     if (!buyer) {
-      return new Response(
-        JSON.stringify({ error: 'User not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'User not found' }, 404);
     }
 
     console.log('👤 Buyer:', buyer.email);
@@ -118,43 +138,49 @@ export async function POST(request) {
       });
 
     if (!cart || cart.items.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Cart is empty' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ 
+        error: 'Cart is empty',
+        message: 'Please add items to your cart before checking out'
+      }, 400);
     }
 
     console.log(`🛒 Cart items: ${cart.items.length}`);
 
-    // Verify all products exist and have owners
+    // Verify all products exist and have stock
+    const validationErrors = [];
+    
     for (const item of cart.items) {
       if (!item.product) {
-        return new Response(
-          JSON.stringify({ error: 'One or more products no longer exist' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+        validationErrors.push({
+          item: item._id,
+          error: 'Product no longer exists'
+        });
+        continue;
       }
       
       if (!item.product.owner) {
-        console.error('❌ Product missing owner:', item.product._id);
-        return new Response(
-          JSON.stringify({ 
-            error: `Product "${item.product.title}" has no owner`,
-            productId: item.product._id 
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+        validationErrors.push({
+          item: item._id,
+          product: item.product.title,
+          error: 'Product has no owner'
+        });
+        continue;
       }
       
       if (item.product.stock < item.quantity) {
-        return new Response(
-          JSON.stringify({ 
-            error: `Insufficient stock for ${item.product.title}`,
-            productId: item.product._id 
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+        validationErrors.push({
+          item: item._id,
+          product: item.product.title,
+          error: `Insufficient stock (Available: ${item.product.stock}, Requested: ${item.quantity})`
+        });
       }
+    }
+
+    if (validationErrors.length > 0) {
+      return jsonResponse({ 
+        error: 'Cart validation failed',
+        details: validationErrors
+      }, 400);
     }
 
     // Group items by seller
@@ -190,7 +216,7 @@ export async function POST(request) {
     console.log(`📊 Orders grouped by ${Object.keys(ordersBySeller).length} seller(s)`);
 
     // Create separate orders for each seller using a transaction
-    const mongoSession = await mongoose.startSession();
+    mongoSession = await mongoose.startSession();
     const createdOrders = [];
     
     try {
@@ -240,7 +266,7 @@ export async function POST(request) {
               apartment: normalizedAddress.apartment || '',
               city: normalizedAddress.city,
               province: normalizedAddress.province,
-              zipCode: normalizedAddress.postalCode || normalizedAddress.zipCode,
+              zipCode: normalizedAddress.postalCode,
               country: 'South Africa',
             },
             
@@ -299,18 +325,21 @@ export async function POST(request) {
       });
 
       await mongoSession.endSession();
+      mongoSession = null;
       
     } catch (txError) {
-      await mongoSession.endSession();
+      if (mongoSession) {
+        await mongoSession.endSession();
+      }
       console.error('❌ Transaction failed:', txError);
-      throw txError;
+      throw new Error(`Transaction failed: ${txError.message}`);
     }
 
     // Handle PayFast payment for first order (or combine if needed)
     let paymentUrl = null;
     if (paymentMethod === 'payfast' && createdOrders.length > 0) {
       try {
-        const baseUrl = process.env.NEXTAUTH_URL;
+        const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
         const firstOrder = createdOrders[0];
         
         const payfastData = createPayFastPayment(
@@ -340,30 +369,33 @@ export async function POST(request) {
 
     console.log('🎉 Checkout complete!');
 
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        orders: createdOrders.map(o => ({
-          _id: o._id,
-          orderNumber: o.orderNumber,
-          total: o.total,
-          seller: o.seller,
-          sellerName: o.sellerName,
-        })),
-        message: `${createdOrders.length} order(s) created successfully`,
-        paymentUrl,
-      }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ 
+      success: true,
+      orders: createdOrders.map(o => ({
+        _id: o._id,
+        orderNumber: o.orderNumber,
+        total: o.total,
+        seller: o.seller,
+        sellerName: o.sellerName,
+      })),
+      message: `${createdOrders.length} order(s) created successfully`,
+      paymentUrl,
+    }, 201);
 
   } catch (error) {
+    // Cleanup session if it exists
+    if (mongoSession) {
+      try {
+        await mongoSession.endSession();
+      } catch (e) {
+        console.error('Failed to end session:', e);
+      }
+    }
+
     console.error('❌ Checkout error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to process checkout',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ 
+      error: error.message || 'Failed to process checkout',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, 500);
   }
 }
