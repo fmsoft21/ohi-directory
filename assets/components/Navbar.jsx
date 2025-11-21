@@ -93,7 +93,7 @@ export default function Navbar2() {
 
             {!session ? (
               <Link href='/auth/signin'>
-                <Button variant="outline" className="cursor-pointer">
+                <Button className=" cursor-pointer">
                   Login | Register
                 </Button>
               </Link>
