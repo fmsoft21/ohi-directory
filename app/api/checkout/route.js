@@ -161,7 +161,19 @@ export async function POST(request) {
     // Verify all products exist and have stock
     const validationErrors = [];
     
+    console.log('🔍 Validating cart items...');
     for (const item of cart.items) {
+      console.log('Checking item:', {
+        itemId: item._id,
+        hasProduct: !!item.product,
+        productId: item.product?._id,
+        productTitle: item.product?.title,
+        hasOwner: !!item.product?.owner,
+        ownerId: item.product?.owner?._id || item.product?.owner,
+        stock: item.product?.stock,
+        quantity: item.quantity
+      });
+
       if (!item.product) {
         validationErrors.push({
           item: item._id,
@@ -174,7 +186,8 @@ export async function POST(request) {
         validationErrors.push({
           item: item._id,
           product: item.product.title,
-          error: 'Product has no owner'
+          error: 'Product has no owner',
+          productId: item.product._id
         });
         continue;
       }
@@ -192,7 +205,8 @@ export async function POST(request) {
       console.error('❌ Cart validation failed:', validationErrors);
       return jsonResponse({ 
         error: 'Cart validation failed',
-        details: validationErrors
+        details: validationErrors,
+        message: `Found ${validationErrors.length} issue(s) with cart items. Please review your cart.`
       }, 400);
     }
 

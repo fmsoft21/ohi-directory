@@ -1,7 +1,11 @@
 import React from 'react';
 import ProductCard from '@/assets/components/ProductCard';
+import ProductListCard from '@/assets/components/ProductListCard';
 import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Grid3x3, List } from 'lucide-react';
+
 
 // Reusable FilterAndSort component
 // Props:
@@ -11,6 +15,7 @@ export default function FilterAndSort({ products = [], renderResults }) {
   const [query, setQuery] = React.useState('');
   const [category, setCategory] = React.useState('all');
   const [sort, setSort] = React.useState('latest');
+  const [viewMode, setViewMode] = React.useState('grid');
 
   const categories = React.useMemo(() => {
     if (!products) return ['all'];
@@ -73,8 +78,18 @@ export default function FilterAndSort({ products = [], renderResults }) {
       );
     }
 
+    if (viewMode === 'list') {
+      return (
+        <div className="space-y-4">
+          {items.map((p, i) => (
+            <ProductListCard key={p.id || p._id || i} product={p} />
+          ))}
+        </div>
+      );
+    }
+
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
         {items.map((p, i) => (
           <ProductCard className="bg-amber-400" key={p.id || p._id || i} product={p} />
         ))}
@@ -84,22 +99,22 @@ export default function FilterAndSort({ products = [], renderResults }) {
 
   return (
     <div className="mb-6">
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center mb-6">
+      <div className="flex flex-row items-center gap-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 mb-6">
         <Input
           aria-label="Search products"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name or description"
-          className="w-full md:w-2/3 px-3 py-2 rounded-md border"
+          className="flex-1 min-w-[120px] h-9 px-3 py-2 dark:bg-zinc-900 dark:text-white bg-white text-gray-900 text-sm"
         />
 
-        <Select  value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-full md:w-1/6">
-            <SelectValue placeholder="Select category" />
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="hidden sm:block sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
-          <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50' >
+          <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50'>
             {categories.map((c) => (
-              <SelectItem className='hover:bg-emerald-600 cursor-pointer' key={c} value={c}>
+              <SelectItem className='hover:bg-emerald-600 cursor-pointer text-sm' key={c} value={c}>
                 {capitalize(c)}
               </SelectItem>
             ))}
@@ -107,31 +122,43 @@ export default function FilterAndSort({ products = [], renderResults }) {
         </Select>
 
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-full md:w-1/6">
-            <SelectValue placeholder="Sort by" />
+          <SelectTrigger className="hidden sm:block sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
+            <SelectValue placeholder="Sort" />
           </SelectTrigger>
           <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50'>
-            <SelectItem className='hover:bg-emerald-600 cursor-pointer' value="latest">Newest</SelectItem>
-            <SelectItem className='hover:bg-emerald-600 cursor-pointer' value="price-asc">Price: Low → High</SelectItem>
-            <SelectItem className='hover:bg-emerald-600 cursor-pointer' value="price-desc">Price: High → Low</SelectItem>
+            <SelectItem className='hover:bg-emerald-600 cursor-pointer text-sm' value="latest">Newest</SelectItem>
+            <SelectItem className='hover:bg-emerald-600 cursor-pointer text-sm' value="price-asc">Price: Low → High</SelectItem>
+            <SelectItem className='hover:bg-emerald-600 cursor-pointer text-sm' value="price-desc">Price: High → Low</SelectItem>
           </SelectContent>
         </Select>
 
-        <button
-          type="button"
-          onClick={() => {
-            setQuery('');
-            setCategory('all');
-            setSort('latest');
-          }}
-          className="px-4 py-2 rounded bg-emerald-600 text-white"
-        >
-          Reset
-        </button>
+        {/* View Toggle (matches StoreFilterSort) */}
+        <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 shrink-0">
+          <Button
+            onClick={() => setViewMode('grid')}
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            className={`h-8 w-8 p-0`}
+            aria-label="Grid view"
+          >
+            <Grid3x3 className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => setViewMode('list')}
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            className={`h-8 w-8 p-0`}
+            aria-label="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
+
+        
       </div>
 
-      {/* Render results using provided render function or default grid */}
-      {renderResults ? renderResults(filteredProducts) : defaultRender(filteredProducts)}
+      {/* Render results using provided render function or default grid/list */}
+      {renderResults ? renderResults(filteredProducts, viewMode) : defaultRender(filteredProducts)}
     </div>
   );
 }

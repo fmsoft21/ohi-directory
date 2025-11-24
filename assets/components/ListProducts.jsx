@@ -130,7 +130,7 @@ const ProductsTable = () => {
   };
 
   return (
-    <Card className="w-11/12 mx-auto mt-2 border-none bg-zinc-100 dark:bg-zinc-900" data-oid="y.qvo25">
+    <Card className="sm:w-11/12 mx-auto -mt-4 sm:mt-2 border-none bg-zinc-100 dark:bg-zinc-900" data-oid="y.qvo25">
       <CardHeader className="flex flex-row " data-oid="-um8bbl">
         <CardTitle data-oid="54xqb8g">Products</CardTitle>
         <Link
@@ -139,8 +139,8 @@ const ProductsTable = () => {
           data-oid="9yen0nk"
         >
           <Button className="-mt-4" data-oid="33:rv8u">
-            <PlusCircle className="mr-2 h-4 w-4" data-oid="zdp2ibn" />
-            Add Product
+            <PlusCircle className="sm:mr-2 h-4 w-4" data-oid="zdp2ibn" />
+            <span className="hidden sm:block">Add Product</span>
           </Button>
         </Link>
       </CardHeader>
@@ -165,9 +165,9 @@ const ProductsTable = () => {
                 .map((product) => (
                   <div
                     key={product._id}
-                    className="flex items-center justify-between p-4 border-none bg-white dark:bg-zinc-800 rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row items-center justify-between p-4 border-none bg-white dark:bg-zinc-800 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full">
                       <div className="w-20 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0 relative">
                         {product.images?.[0] ? (
                           <Image
@@ -183,12 +183,12 @@ const ProductsTable = () => {
                           </div>
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium">{product.title}</p>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{product.title}</p>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground truncate">
                           <span>R{product.price}</span>
                           <span>•</span>
-                          <span>Stock: {product.stock}</span>
+                          <span className='hidden' >Stock: {product.stock}</span>
                           {product.rating > 0 && (
                             <>
                               <span>•</span>
@@ -202,7 +202,7 @@ const ProductsTable = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center">
+                    <div className="flex items-center mt-3 sm:mt-0 sm:ml-4">
                       <Link href={`/dashboard/products/edit/${product._id}`} data-oid="jdygsod">
                         <Button className="mr-2" variant="outline" size="sm" data-oid=".yv3q3d">
                           <Pencil className="h-4 w-4" data-oid="oz3-ukl" />
@@ -235,7 +235,7 @@ const ProductsTable = () => {
                 ))}
             </div>
 
-            <div className="flex items-center justify-between mt-4" data-oid="lm3iczd">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-4" data-oid="lm3iczd">
               <div className="flex items-center space-x-2" data-oid="yh8h945">
                 <Select onValueChange={handleRowsPerPageChange} defaultValue={rowsPerPage.toString()} data-oid="u:pqi4y">
                   <SelectTrigger className="w-20" data-oid="o6bpkxk">

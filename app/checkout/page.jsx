@@ -234,6 +234,14 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        console.error('Checkout failed:', data);
+        // Show detailed error if available
+        if (data.details && Array.isArray(data.details)) {
+          const errorMessages = data.details.map(err => 
+            `${err.product || 'Item'}: ${err.error}`
+          ).join('\n');
+          throw new Error(`${data.error}\n\n${errorMessages}`);
+        }
         throw new Error(data.error || data.message || 'Checkout failed');
       }
 
@@ -241,7 +249,7 @@ export default function CheckoutPage() {
       const orderNumbers = data.orders?.map(o => o.orderNumber).join(', ') || 'Unknown';
       toast({
         title: "Success!",
-        description: `Order(s) created: ${orderNumbers}`,
+        description: `Order created: ${orderNumbers}`,
       });
 
       // Handle payment redirection
@@ -396,7 +404,7 @@ export default function CheckoutPage() {
                     name="apartment"
                     value={formData.apartment}
                     onChange={handleInputChange}
-                    placeholder="Apt 4B"
+                    placeholder="No. 4B"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -615,7 +623,6 @@ export default function CheckoutPage() {
                 onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full h-12 text-lg"
-                variant="primary"
               >
                 {isSubmitting ? 'Processing...' : `Complete Order (R ${total.toFixed(2)})`}
               </Button>

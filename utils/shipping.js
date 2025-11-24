@@ -172,4 +172,4 @@ export function validateShippingAddress(address) {
     valid: errors.length === 0,
     errors,
   };
-}
+} 
