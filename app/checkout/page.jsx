@@ -147,6 +147,27 @@ export default function CheckoutPage() {
     }
   };
 
+  const submitPayFastForm = (formData, action) => {
+    // Create a form element
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = action;
+    
+    // Add all form fields as hidden inputs
+    Object.entries(formData).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+    
+    // Append form to body and submit
+    document.body.appendChild(form);
+    console.log('Submitting PayFast form with data:', formData);
+    form.submit();
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -252,10 +273,11 @@ export default function CheckoutPage() {
         description: `Order created: ${orderNumbers}`,
       });
 
-      // Handle payment redirection
-      if (formData.paymentMethod === 'payfast' && data.paymentUrl) {
-        console.log('Redirecting to PayFast:', data.paymentUrl);
-        window.location.href = data.paymentUrl;
+      // Handle payment submission
+      if (formData.paymentMethod === 'payfast' && data.payment) {
+        console.log('Submitting to PayFast:', data.payment.formAction);
+        // Create and submit PayFast form
+        submitPayFastForm(data.payment.formData, data.payment.formAction);
       } else {
         router.push('/dashboard/purchases');
       }

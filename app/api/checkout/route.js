@@ -364,14 +364,10 @@ export async function POST(request) {
 
     // Handle PayFast payment
     let paymentData = null;
-    let paymentUrl = null;
     
     if (paymentMethod === 'payfast' && createdOrders.length > 0) {
       try {
         const baseUrl = process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`;
-        
-        // Calculate total for all orders
-        const totalAmount = createdOrders.reduce((sum, o) => sum + o.total, 0);
         
         // Create PayFast data for all orders combined
         const payfastResult = createPayFastPayment(
@@ -381,10 +377,16 @@ export async function POST(request) {
           `${baseUrl}/api/payment/payfast/notify`
         );
 
-        paymentData = payfastResult.data;
-        paymentUrl = payfastResult.url;
+        paymentData = {
+          formData: payfastResult.data,
+          formAction: payfastResult.url
+        };
         
-        console.log('💳 PayFast payment data generated');
+        console.log('💳 PayFast payment data generated:', {
+          action: payfastResult.url,
+          merchant_id: payfastResult.data.merchant_id,
+          amount: payfastResult.data.amount
+        });
       } catch (pfError) {
         console.error('⚠️ PayFast error (continuing anyway):', pfError);
         // Don't fail the whole order if PayFast fails
@@ -403,8 +405,7 @@ export async function POST(request) {
         sellerName: o.sellerName,
       })),
       message: `${createdOrders.length} order(s) created successfully`,
-      paymentData: paymentData, // Return PayFast form data
-      paymentUrl: paymentUrl,
+      payment: paymentData, // Return PayFast form data with formData and formAction
     }, 201);
 
   } catch (error) {
