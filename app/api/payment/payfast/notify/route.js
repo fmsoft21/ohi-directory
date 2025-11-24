@@ -1,7 +1,13 @@
 // app/api/payment/payfast/notify/route.js
 import connectDB from '@/config/database';
 import Order from '@/models/Order';
-import { verifyPayFastPayment, isValidPayFastIP, parsePayFastStatus } from '@/utils/payfast';
+import { 
+  verifyPayFastPayment, 
+  isValidPayFastIP, 
+  parsePayFastStatus,
+  isPayFastSignatureRequired,
+  isPayFastITNEnabled
+} from '@/utils/payfast';
 
 /**
  * PayFast Instant Transaction Notification (ITN) handler
@@ -9,6 +15,11 @@ import { verifyPayFastPayment, isValidPayFastIP, parsePayFastStatus } from '@/ut
  */
 export async function POST(request) {
   try {
+    if (!isPayFastITNEnabled()) {
+      console.log('PayFast ITN disabled via config; acknowledging ping without processing.');
+      return new Response('ITN disabled', { status: 200 });
+    }
+
     await connectDB();
 
     // Get client IP for security check
@@ -31,13 +42,27 @@ export async function POST(request) {
 
     console.log('PayFast ITN received:', postData);
 
-    // Verify signature
-    const passPhrase = process.env.PAYFAST_PASSPHRASE;
-    const isValid = verifyPayFastPayment(postData, passPhrase);
+    // Verify signature if required / present
+    const signatureRequired = isPayFastSignatureRequired();
+    const hasSignature = typeof postData.signature === 'string' && postData.signature.length > 0;
+    if (signatureRequired && !hasSignature) {
+      console.error('PayFast signature missing but required.');
+      return new Response('Signature missing', { status: 400 });
+    }
 
-    if (!isValid) {
-      console.error('Invalid PayFast signature');
-      return new Response('Invalid signature', { status: 400 });
+    if (hasSignature) {
+      const merchantId = postData.merchant_id;
+      const passPhrase = merchantId === '10000100'
+        ? (process.env.PAYFAST_SANDBOX_PASSPHRASE ?? process.env.PAYFAST_PASSPHRASE ?? null)
+        : (process.env.PAYFAST_PASSPHRASE ?? null);
+      const isValid = verifyPayFastPayment(postData, passPhrase);
+
+      if (!isValid) {
+        console.error('Invalid PayFast signature');
+        return new Response('Invalid signature', { status: 400 });
+      }
+    } else {
+      console.log('PayFast signature not provided; skipping verification because requirement disabled.');
     }
 
     // Extract data

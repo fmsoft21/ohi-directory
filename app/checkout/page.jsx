@@ -13,6 +13,8 @@ import { toast } from '@/components/hooks/use-toast';
 import { Store, Package, TruckIcon, CreditCard, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+const PAYFAST_STORAGE_KEY = 'payfast:lastPaymentId';
+
 export default function CheckoutPage() {
   const { cart, loading: cartLoading } = useCart();
   const { data: session, status } = useSession();
@@ -148,6 +150,14 @@ export default function CheckoutPage() {
   };
 
   const submitPayFastForm = (formData, action) => {
+    try {
+      if (typeof window !== 'undefined' && formData?.m_payment_id) {
+        sessionStorage.setItem(PAYFAST_STORAGE_KEY, formData.m_payment_id);
+      }
+    } catch (storageError) {
+      console.warn('Failed to persist PayFast payment id', storageError);
+    }
+
     // Create a form element
     const form = document.createElement('form');
     form.method = 'POST';

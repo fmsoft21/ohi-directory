@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2, Package } from 'lucide-react';
 import Link from 'next/link';
 
+const PAYFAST_STORAGE_KEY = 'payfast:lastPaymentId';
+
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -15,22 +17,30 @@ function PaymentSuccessContent() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const paymentId = searchParams.get('m_payment_id');
+    const paymentIdFromUrl = searchParams.get('m_payment_id');
+    const storedPaymentId = typeof window !== 'undefined'
+      ? sessionStorage.getItem(PAYFAST_STORAGE_KEY)
+      : null;
+    const paymentId = paymentIdFromUrl || storedPaymentId;
     const paymentStatus = searchParams.get('payment_status');
+    const normalizedStatus = paymentStatus?.toUpperCase() || null;
     
     console.log('Payment return:', { paymentId, paymentStatus });
 
-    if (paymentId) {
-      if (paymentStatus === 'COMPLETE') {
-        verifyPayment(paymentId);
-      } else {
-        setError('Payment was not completed');
-        setVerifying(false);
-      }
-    } else {
+    if (!paymentId) {
       setError('No payment information found');
       setVerifying(false);
+      return;
     }
+
+    setError(null);
+    setVerifying(true);
+
+    if (normalizedStatus !== 'COMPLETE') {
+      console.warn('Payment status not marked COMPLETE on return. Proceeding with server verification.');
+    }
+
+    verifyPayment(paymentId);
   }, [searchParams]);
 
   const verifyPayment = async (paymentId) => {
@@ -44,6 +54,9 @@ function PaymentSuccessContent() {
       if (res.ok) {
         const data = await res.json();
         setOrderData(data);
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem(PAYFAST_STORAGE_KEY);
+        }
       } else {
         const errorData = await res.json();
         setError(errorData.error || 'Failed to verify payment');

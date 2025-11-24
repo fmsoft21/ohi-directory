@@ -1,30 +1,87 @@
 // utils/payfast.js - ENHANCED VERSION
 import crypto from 'crypto';
 
+const disabledFlags = ['false', '0', 'off', 'disabled', 'no'];
+
+export const isPayFastSignatureRequired = () => {
+  const flag = process.env.PAYFAST_REQUIRE_SIGNATURE;
+  if (!flag) return true; // default to secure behaviour
+  return !disabledFlags.includes(flag.toLowerCase());
+};
+
+export const isPayFastITNEnabled = () => {
+  const flag = process.env.PAYFAST_ENABLE_ITN;
+  if (!flag) return true;
+  return !disabledFlags.includes(flag.toLowerCase());
+};
+
+// Field order prescribed by PayFast documentation (Custom Integration -> Step 2)
+const PAYFAST_FIELD_ORDER = [
+  'merchant_id',
+  'merchant_key',
+  'return_url',
+  'cancel_url',
+  'notify_url',
+  'name_first',
+  'name_last',
+  'email_address',
+  'cell_number',
+  'm_payment_id',
+  'amount',
+  'item_name',
+  'item_description',
+  'custom_int1',
+  'custom_int2',
+  'custom_int3',
+  'custom_int4',
+  'custom_int5',
+  'custom_str1',
+  'custom_str2',
+  'custom_str3',
+  'custom_str4',
+  'custom_str5',
+  'email_confirmation',
+  'confirmation_address',
+  'payment_method',
+  'subscription_type',
+  'billing_date',
+  'recurring_amount',
+  'frequency',
+  'cycles',
+  'subscription_notify_email',
+  'subscription_notify_webhook',
+  'subscription_notify_buyer',
+];
+
 /**
  * Generate PayFast payment signature
  */
 export function generatePayFastSignature(data, passPhrase = null) {
-  // Create parameter string - must be in alphabetical order
-  const sortedData = {};
-  Object.keys(data).sort().forEach(key => {
-    sortedData[key] = data[key];
+  // Create parameter string using the PayFast prescribed order
+  const orderedPairs = [];
+  const processedKeys = new Set();
+
+  PAYFAST_FIELD_ORDER.forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(data, key) && key !== 'signature') {
+      orderedPairs.push([key, data[key]]);
+      processedKeys.add(key);
+    }
   });
 
-  // Create parameter string
+  Object.keys(data).forEach(key => {
+    if (key === 'signature' || processedKeys.has(key)) return;
+    orderedPairs.push([key, data[key]]);
+  });
+
   let pfOutput = '';
-  for (let key in sortedData) {
-    if (sortedData.hasOwnProperty(key) && key !== 'signature') {
-      const value = sortedData[key];
-      // Only include non-empty values
-      if (value !== '' && value !== null && value !== undefined) {
-        pfOutput += `${key}=${encodeURIComponent(value.toString().trim()).replace(/%20/g, '+')}&`;
-      }
+  for (const [key, value] of orderedPairs) {
+    if (value !== '' && value !== null && value !== undefined) {
+      pfOutput += `${key}=${encodeURIComponent(value.toString().trim()).replace(/%20/g, '+')}&`;
     }
   }
 
-  // Remove last ampersand
-  let getString = pfOutput.slice(0, -1);
+  // Remove last ampersand (handles empty string safely)
+  let getString = pfOutput.endsWith('&') ? pfOutput.slice(0, -1) : pfOutput;
   
   // Add passphrase if provided
   if (passPhrase !== null && passPhrase !== '') {
@@ -112,8 +169,15 @@ export function createPayFastPayment(orders, returnUrl, cancelUrl, notifyUrl) {
     data.cell_number = phone.replace(/\s/g, '');
   }
 
-  // Generate signature - IMPORTANT: Sandbox does NOT use passphrase
-  data.signature = generatePayFastSignature(data, useSandbox ? null : passPhrase);
+  if (isPayFastSignatureRequired()) {
+    const sandboxPassphrase = process.env.PAYFAST_SANDBOX_PASSPHRASE;
+    const signaturePassphrase = useSandbox
+      ? (sandboxPassphrase ?? passPhrase ?? null)
+      : (passPhrase ?? null);
+    data.signature = generatePayFastSignature(data, signaturePassphrase);
+  } else {
+    delete data.signature;
+  }
 
   return {
     data,
@@ -127,6 +191,10 @@ export function createPayFastPayment(orders, returnUrl, cancelUrl, notifyUrl) {
  * Verify PayFast payment notification (ITN)
  */
 export function verifyPayFastPayment(postData, passPhrase = null) {
+  if (!isPayFastSignatureRequired()) {
+    return true;
+  }
+
   // Separate signature from data
   const pfSignature = postData.signature;
   delete postData.signature;
