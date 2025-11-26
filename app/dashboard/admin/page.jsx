@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/utils/authOptions';
 import { redirect } from 'next/navigation';
 import AdminDashboardClient from '@/assets/components/AdminDashboardClient';
-import DashboardShell from '@/assets/components/DashboardShell';
+import AdminDashboardShell from '@/assets/components/AdminDashboardShell';
 
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -19,10 +19,8 @@ export default async function AdminDashboardPage() {
   }
   
   return (
-<DashboardShell>
-
-    <AdminDashboardClient />;
-</DashboardShell>
-  ) 
-  
+    <AdminDashboardShell>
+      <AdminDashboardClient />
+    </AdminDashboardShell>
+  );
 }
