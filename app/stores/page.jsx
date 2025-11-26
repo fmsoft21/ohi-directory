@@ -2,12 +2,10 @@
 import React, { useState, useEffect } from "react";
 import StoreFilterSort from "@/assets/components/StoreFilterSort";
 import Loading from "@/app/loading";
-import Image from "next/image";
 import StoresMapView from '@/assets/components/MapLibreStoresMap';
 import { Button } from "@/components/ui/button";
-import { Map, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 const StoresPage = () => {
   const [stores, setStores] = useState([]);
@@ -15,8 +13,7 @@ const StoresPage = () => {
   const [error, setError] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [showMapDialog, setShowMapDialog] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -24,7 +21,7 @@ const StoresPage = () => {
         setLoading(true);
         const response = await fetch('/api/stores');
         
-        if (!response.ok) {
+        if (!response. ok) {
           throw new Error('Failed to fetch stores');
         }
 
@@ -32,7 +29,7 @@ const StoresPage = () => {
         setStores(data);
         setError(null);
       } catch (err) {
-        setError(err.message);
+        setError(err. message);
         console.error('Error fetching stores:', err);
       } finally {
         setLoading(false);
@@ -49,7 +46,7 @@ const StoresPage = () => {
           return {
             ...store,
             likes: store.isLiked ? (store.likes || 0) - 1 : (store.likes || 0) + 1,
-            isLiked: !store.isLiked,
+            isLiked: ! store.isLiked,
           };
         }
         return store;
@@ -74,72 +71,49 @@ const StoresPage = () => {
     );
   }
 
-  const links = [
-    { name: 'Register Store', href: '/dashboard/profile' },
-    { name: 'Browse Products', href: '/products' },
-    { name: 'Support', href: '/support' },
-    { name: 'About Us', href: '/about' },
-  ];
-  
-  const stats = [
-    { name: 'Active Stores', value: stores.length },
-    { name: 'Provinces Covered', value: '9' },
-    { name: 'Products Listed', value: '1000+' },
-    { name: 'Happy Customers', value: '5000+' },
-  ];
-
   return (
-    <div className="bg-radial from-white/20 to-emerald-600/10 dark:from-zinc-900/10 dark:to-emerald-800/70">
-      {/* Hero Section */}
-      <div className="relative isolate overflow-hidden pb-10 -mt-8 sm:py-20">
-        <Image
-          height={1500}
-          width={2830}
-          alt=""
-          src="/onboard.jpeg"
-          className="absolute inset-0 -z-10 size-full object-cover object-right md:object-center"
-        />
-        <div className="absolute inset-0 -z-10 bg-white/30 dark:bg-black/10 backdrop-blur-md"></div>
-        <div className="h-10 w-2/3 bg-gradient-to-br from-emerald-500 opacity-20 blur-2xl dark:from-emerald-500 dark:invisible dark:opacity-40"></div>
-        <div className="h-10 w-3/5 bg-gradient-to-r from-emerald-500 opacity-40 blur-2xl dark:from-emerald-500 dark:opacity-40"></div>
-        
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:mx-0">
-            <h2 className="text-5xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-7xl">
-              Find Home Stores near you
-            </h2>
-            <p className="mt-8 text-lg font-medium text-pretty text-gray-800 dark:text-gray-300 sm:text-xl/8">
-              Discover local businesses and connect with store owners in your area. Browse through our curated collection of stores.
-            </p>
+    <div className="bg-white dark:bg-zinc-950">
+      {/* Centered Dark Panel Header */}
+      <div className="mx-auto max-w-7xl py-24 sm:px-6 sm:py-32 lg:px-8">
+        <div className="relative isolate overflow-hidden bg-gray-900 px-6 py-24 text-center shadow-2xl sm:rounded-3xl sm:px-16">
+          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Find Home Stores Near You
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
+            Discover local businesses and connect with store owners in your area.  Browse through our curated collection of stores. 
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <a
+              href="/dashboard/profile"
+              className="rounded-md bg-white px-3. 5 py-2. 5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Register Store
+            </a>
+            <a href="/products" className="text-sm font-semibold leading-6 text-white">
+              Browse Products <span aria-hidden="true">→</span>
+            </a>
           </div>
-          
-          <div className="mx-auto mt-10 max-w-2xl lg:mx-0 lg:max-w-none">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-6 text-base/7 font-semibold text-gray-800 dark:text-white sm:grid-cols-2 md:flex lg:gap-x-10">
-              {links.map((link) => (
-                <a key={link.name} href={link.href} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                  {link.name} <span aria-hidden="true">&rarr;</span>
-                </a>
-              ))}
-            </div>
-            
-            <dl className="mt-16 grid grid-cols-1 gap-8 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4">
-              {stats.map((stat) => (
-                <div key={stat.name} className="flex flex-col-reverse gap-1">
-                  <dt className="text-base/7 text-gray-800 dark:text-gray-300">{stat.name}</dt>
-                  <dd className="text-4xl font-semibold tracking-tight text-gray-900 dark:text-white">{stat.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+          <svg
+            viewBox="0 0 1024 1024"
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 -z-10 h-[64rem] w-[64rem] -translate-x-1/2 [mask-image:radial-gradient(closest-side,white,transparent)]"
+          >
+            <circle r={512} cx={512} cy={512} fill="url(#stores-gradient)" fillOpacity="0. 7" />
+            <defs>
+              <radialGradient id="stores-gradient">
+                <stop stopColor="#10B981" />
+                <stop offset={1} stopColor="#059669" />
+              </radialGradient>
+            </defs>
+          </svg>
         </div>
       </div>
 
-      {/* Map Dialog - Full Screen on Mobile */}
+      {/* Map Dialog */}
       <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
         <DialogTitle className="sr-only">Stores Map</DialogTitle>
         <DialogContent className="w-screen h-screen max-w-none p-0 gap-0 border-none">
           <div className="relative w-full h-full">
-            {/* Close Button */}
             <Button
               onClick={() => setShowMapDialog(false)}
               variant="outline"
@@ -148,8 +122,6 @@ const StoresPage = () => {
             >
               <X className="h-5 w-5 text-white" />
             </Button>
-            
-            {/* Map Component */}
             <div className="w-full h-full">
               <StoresMapView 
                 stores={stores} 
@@ -165,13 +137,14 @@ const StoresPage = () => {
 
       {/* Stores Grid Section */}
       <div className="container-xl lg:container m-auto p-4 sm:p-10">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 mt-6 text-foreground">
+        <div className="md:flex md:items-center md:justify-between mb-8">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             All Stores
-          </h1>
-          <p className="text-muted-foreground">
-            Discover local businesses and connect with store owners
-          </p>
+          </h2>
+          <a href="/products" className="hidden text-sm font-medium text-emerald-600 hover:text-emerald-500 md:block">
+            Browse all products
+            <span aria-hidden="true"> &rarr;</span>
+          </a>
         </div>
 
         <StoreFilterSort 
@@ -182,6 +155,13 @@ const StoresPage = () => {
           onViewModeChange={setViewMode}
           onMapClick={() => setShowMapDialog(true)}
         />
+
+        <div className="mt-8 text-sm md:hidden">
+          <a href="/products" className="font-medium text-emerald-600 hover:text-emerald-500">
+            Browse all products
+            <span aria-hidden="true"> &rarr;</span>
+          </a>
+        </div>
       </div>
     </div>
   );

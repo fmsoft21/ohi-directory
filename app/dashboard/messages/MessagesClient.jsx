@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MessageSquare } from "lucide-react";
@@ -69,16 +68,12 @@ export default function MessagesClient() {
 
   return (
     <DashboardShell>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="-mt-5 md:col-span-2 lg:col-span-3 border-none bg-zinc-100 dark:bg-zinc-900">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Messages</span>
-              <Badge variant="secondary">{conversations.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Messages</h2>
+          <Badge variant="secondary">{conversations.length}</Badge>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {loading && conversations.length === 0 ? (
                 <div className="col-span-full flex justify-center p-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -141,9 +136,7 @@ export default function MessagesClient() {
                 })
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardShell>
+        </div>
+    </DashboardShell> 
   );
 }

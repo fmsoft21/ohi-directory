@@ -66,12 +66,12 @@ const StoreCard = ({ shop, onLike, isHighlighted }) => {
 
             <div className="mt-6 flex items-center gap-3">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => onLike(shop.id)}
                 className={`${
                   shop.isLiked
-                    ? "bg-red-500 text-white border-red-500 hover:bg-red-500 hover:text-white"
-                    : "text-red-500 border-red-500 dark:bg-transparent dark:hover:bg-red-500 hover:text-white"
+                    ? "bg-red-500 text-white"
+                    : "text-red-500 dark:bg-transparent"
                 }`}
               >
                 <Heart
@@ -79,7 +79,7 @@ const StoreCard = ({ shop, onLike, isHighlighted }) => {
                 />
               </Button>
               <Link href={`/stores/${shop.id}`}>
-                <Button>
+                <Button variant="secondary">
                   <Eye className="h-4 w-4" />
                 </Button>
               </Link>

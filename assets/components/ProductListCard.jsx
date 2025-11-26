@@ -54,7 +54,7 @@ const ProductListCard = ({ product = {} }) => {
   const rating = Number(product?.rating) || 0;
 
   return (
-    <div className="pb-8 transition-all duration-400 ease-in-out border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+    <div className="-mx-8 sm:mx-auto transition-all duration-400 ease-in-out border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
       <div className="flex items-center gap-4 py-4 px-2">
         {/* Image Section */}
         <div className="flex-shrink-0">
@@ -98,8 +98,8 @@ const ProductListCard = ({ product = {} }) => {
               )}
             </div>
             
-            <span className="dark:text-gray-400">
-              <span className="font-semibold dark:text-white">{product?.stock ?? 0}</span> Stock
+            <span className="hidden sm:block dark:text-gray-400">
+              <span className=" font-semibold dark:text-white">{product?.stock ?? 0}</span> Stock
             </span>
             
             <div className="flex items-center gap-1 dark:text-gray-400">
@@ -114,17 +114,16 @@ const ProductListCard = ({ product = {} }) => {
         {/* Actions Section */}
         <div className="flex flex-col gap-2 flex-shrink-0">
           <Link href={`/products/${product?._id || ""}`}>
-            <Button size='sm'>
+            <Button size='icon' variant="outline">
               <Eye className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">View</span>
             </Button>
           </Link>
           <Button
-            size="sm"
+            size="icon"
             onClick={handleAddToCart}
             disabled={adding || product?.stock === 0}
-            className="border border-emerald-500 text-emerald-600 hover:bg-emerald-600 hover:text-white dark:border-emerald-400"
-            variant="outline"
+            variant="secondary"
           >
             <ShoppingCart className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Add</span>

@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,13 +60,11 @@ export default function HeroSection() {
             fugiat veniam occaecat fugiat aliqua.
           </p>
           <div className="mt-10 flex items-center gap-x-6">
-            <a
-              href="#"
-              className="rounded-md bg-emerald-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+            <Button variant='success'
             >
               Get started
-            </a>
-            <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            </Button>
+            <a href="#" className="text-sm leading-6 text-gray-900 dark:text-gray-100">
               Learn more <span aria-hidden="true">→</span>
             </a>
           </div>

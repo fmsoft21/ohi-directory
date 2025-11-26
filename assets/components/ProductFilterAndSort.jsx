@@ -89,7 +89,7 @@ export default function FilterAndSort({ products = [], renderResults }) {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div className="-mx-4 sm:mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
         {items.map((p, i) => (
           <ProductCard className="bg-amber-400" key={p.id || p._id || i} product={p} />
         ))}

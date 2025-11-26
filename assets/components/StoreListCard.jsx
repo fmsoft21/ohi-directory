@@ -90,7 +90,7 @@ const StoreListCard = ({ shop, onLike, isHighlighted }) => {
             <Heart className={`h-4 w-4 ${shop.isLiked ? 'fill-current' : ''}`} />
           </Button>
           <Link href={`/stores/${shop.id}`}>
-            <Button size="sm">
+            <Button size="sm" variant="outline">
               <Eye className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">View</span>
             </Button>
