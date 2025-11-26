@@ -222,7 +222,7 @@ export default function AdminDashboardShell({ children }) {
                     <li className="mt-auto">
                       <a
                         href="/dashboard/admin/settings"
-                        className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-800 hover:bg-zinc-800 hover:text-white"
+                        className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-600 dark:text-gray-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white"
                       >
                         <Cog6ToothIcon
                           aria-hidden="true"

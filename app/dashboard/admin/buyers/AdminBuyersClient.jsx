@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useToast } from "@/components/hooks/use-toast";
 
 const statusConfig = {
   active: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
@@ -41,6 +42,7 @@ const statusConfig = {
 };
 
 export default function AdminBuyersClient() {
+  const { toast } = useToast();
   const [buyers, setBuyers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,14 +108,26 @@ export default function AdminBuyersClient() {
       });
 
       if (res.ok) {
+        toast({
+          title: "Success",
+          description: `Buyer ${action}d successfully`,
+        });
         fetchBuyers();
       } else {
         const data = await res.json();
-        alert(data.error || "Action failed");
+        toast({
+          title: "Error",
+          description: data.error || "Action failed",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error performing action:", error);
-      alert("Action failed");
+      toast({
+        title: "Error",
+        description: "Action failed. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

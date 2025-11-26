@@ -45,8 +45,8 @@ import {
   TrendingUp,
   CreditCard,
   Receipt,
-  AlertCircle,
 } from "lucide-react";
+import { useToast } from "@/components/hooks/use-toast";
 
 const transactionTypeConfig = {
   sale: { label: "Sale", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300", icon: ArrowDownRight },
@@ -63,6 +63,7 @@ const statusConfig = {
 };
 
 export default function AdminWalletClient() {
+  const { toast } = useToast();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -155,16 +156,27 @@ export default function AdminWalletClient() {
       });
 
       if (res.ok) {
+        toast({
+          title: "Success",
+          description: "Payout processed successfully",
+        });
         fetchTransactions();
         fetchPendingPayouts();
-        alert("Payout processed successfully");
       } else {
         const data = await res.json();
-        alert(data.error || "Payout failed");
+        toast({
+          title: "Error",
+          description: data.error || "Payout failed",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error processing payout:", error);
-      alert("Payout failed");
+      toast({
+        title: "Error",
+        description: "Payout failed. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

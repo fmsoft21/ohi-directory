@@ -49,16 +49,19 @@ export async function POST(request) {
     }
 
     // Create payout transaction
+    // Note: Transaction is marked as 'processing' initially. 
+    // In a production system, this should be updated to 'completed' 
+    // after actual bank transfer confirmation.
     const payoutTransaction = {
       type: 'payout',
       amount: -amount, // Negative for payout
       fee: 0,
       net: -amount,
-      status: 'completed',
-      description: `Payout processed by admin`,
+      status: 'processing',
+      description: `Payout initiated by admin - awaiting bank transfer`,
       metadata: {
         processedBy: admin._id,
-        processedAt: new Date()
+        initiatedAt: new Date()
       }
     };
 

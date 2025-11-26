@@ -34,13 +34,16 @@ export async function GET(request) {
         .populate('seller', 'storename email')
         .lean();
       
+      // Minimum payout threshold - could be moved to env variable or config
+      const MINIMUM_PAYOUT_THRESHOLD = parseInt(process.env.MINIMUM_PAYOUT_THRESHOLD || '500');
+      
       const pendingPayoutsList = wallets.map(wallet => ({
         sellerId: wallet.seller?._id,
         sellerName: wallet.seller?.storename || 'Unknown',
         sellerEmail: wallet.seller?.email || 'Unknown',
         amount: wallet.availableBalance,
         transactionCount: wallet.transactions?.filter(t => t.status === 'completed' && t.type === 'sale').length || 0
-      })).filter(p => p.amount >= 500); // Minimum payout threshold
+      })).filter(p => p.amount >= MINIMUM_PAYOUT_THRESHOLD);
       
       return new Response(
         JSON.stringify({ pendingPayouts: pendingPayoutsList }),
