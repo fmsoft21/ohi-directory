@@ -1,16 +1,16 @@
-// app/dashboard/admin/page.jsx - Admin dashboard (role-restricted)
+// app/dashboard/admin/buyers/page.jsx - Admin Buyers Management
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/utils/authOptions';
 import { redirect } from 'next/navigation';
-import AdminDashboardClient from '@/assets/components/AdminDashboardClient';
 import AdminDashboardShell from '@/assets/components/AdminDashboardShell';
+import AdminBuyersClient from './AdminBuyersClient';
 
-export default async function AdminDashboardPage() {
+export default async function AdminBuyersPage() {
   const session = await getServerSession(authOptions);
   
   // Redirect if not authenticated
   if (!session) {
-    redirect('/auth/signin?callbackUrl=/dashboard/admin');
+    redirect('/auth/signin?callbackUrl=/dashboard/admin/buyers');
   }
   
   // Redirect if not admin
@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
   
   return (
     <AdminDashboardShell>
-      <AdminDashboardClient />
+      <AdminBuyersClient />
     </AdminDashboardShell>
   );
 }
