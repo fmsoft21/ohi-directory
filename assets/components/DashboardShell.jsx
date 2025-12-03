@@ -215,9 +215,9 @@ export default function DashboardShell({ children }) {
                               href={item.href}
                               className={classNames(
                                 item.href === activeHref
-                                  ? "bg-emerald-600 text-white"
+                                  ? "bg-emerald-600 text-white text-sm leading-6"
                                   : "text-gray-600 dark:text-gray-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-emerald-600 dark:hover:text-emerald-600",
-                                "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 items-center justify-between"
+                                "group flex gap-x-3 rounded-md p-2 text-sm leading-6 items-center justify-between"
                               )}
                             >
                               <div className="flex items-center gap-x-3">

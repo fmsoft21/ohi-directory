@@ -40,6 +40,7 @@
     "imagekit": "^6.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.407.0",
+    "mapbox-gl": "^3.17.0",
     "maplibre-gl": "^5.12.0",
     "megajs": "^1.3.3",
     "mongodb": "^6.8.0",

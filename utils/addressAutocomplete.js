@@ -1,5 +1,5 @@
 /**
- * Address autocomplete using LocationIQ
+ * Address autocomplete using Mapbox Geocoding API
  * Restricted to South Africa
  */
 
@@ -8,42 +8,41 @@ export async function searchAddresses(query, country = 'South Africa') {
     return [];
   }
 
-  const locationiqToken = process.env.NEXT_PUBLIC_LOCATIONIQ_TOKEN;
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   
-  if (!locationiqToken) {
-    console.error('LocationIQ token not configured');
+  if (!mapboxToken) {
+    console.error('Mapbox token not configured');
     return [];
   }
 
   try {
     const response = await fetch(
-      `https://us1.locationiq.com/v1/autocomplete.php?` +
-      `key=${locationiqToken}&` +
-      `q=${encodeURIComponent(query)}&` +
-      `countrycodes=za&` +
-      `format=json&` +
-      `limit=10`,
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+      `access_token=${mapboxToken}&` +
+      `country=za&` +
+      `limit=10&` +
+      `autocomplete=true`,
       {
         method: 'GET',
       }
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch addresses from LocationIQ');
+      throw new Error('Failed to fetch addresses from Mapbox');
     }
 
-    const results = await response.json();
+    const data = await response.json();
 
-    if (!Array.isArray(results)) {
+    if (!data.features || !Array.isArray(data.features)) {
       return [];
     }
 
-    // Map LocationIQ results to our format
-    return results.map((result) => ({
-      label: result.display_name,
-      value: result.display_name,
-      lat: parseFloat(result.lat),
-      lon: parseFloat(result.lon),
+    // Map Mapbox results to our format
+    return data.features.map((result) => ({
+      label: result.place_name,
+      value: result.place_name,
+      lat: result.center[1], // Mapbox returns [lng, lat]
+      lon: result.center[0],
       address: result,
     }));
   } catch (error) {
@@ -53,66 +52,102 @@ export async function searchAddresses(query, country = 'South Africa') {
 }
 
 /**
- * Extract city, province, and zip from LocationIQ address components
+ * Extract city, province, and zip from Mapbox address components
  */
-export function extractAddressComponents(address) {
+export function extractAddressComponents(selectedAddress) {
   const components = {
-    address: address, // Keep the full address with street number
+    address: '',
     city: '',
     province: '',
     zipCode: '',
     country: 'South Africa',
   };
 
-  // LocationIQ returns address as string, we need to parse it
-  // Format typically: street, suburb/town, district, province, postal_code, country
-  const parts = address.split(',').map(p => p.trim());
-
-  // Map of province names to standardized names
-  const provinceMap = {
-    'gauteng': 'Gauteng',
-    'western cape': 'Western Cape',
-    'kwazulu-natal': 'KwaZulu-Natal',
-    'kwazulu natal': 'KwaZulu-Natal',
-    'eastern cape': 'Eastern Cape',
-    'free state': 'Free State',
-    'limpopo': 'Limpopo',
-    'mpumalanga': 'Mpumalanga',
-    'northern cape': 'Northern Cape',
-    'north west': 'North West',
-    'northwest': 'North West',
-  };
-
-  // Extract province, city, and postal code from address parts
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i].toLowerCase().trim();
+  // If it's a Mapbox feature object with context
+  if (selectedAddress.address && selectedAddress.address.context) {
+    const context = selectedAddress.address.context;
     
-    // Check for province
-    for (const [key, value] of Object.entries(provinceMap)) {
-      if (part.includes(key)) {
-        components.province = value;
-        break;
+    // Extract from Mapbox context array
+    context.forEach(item => {
+      const id = item.id.split('.')[0];
+      
+      if (id === 'postcode') {
+        components.zipCode = item.text;
+      } else if (id === 'place') {
+        components.city = item.text;
+      } else if (id === 'region') {
+        // Map Mapbox region to our province names
+        const provinceMap = {
+          'gauteng': 'Gauteng',
+          'western cape': 'Western Cape',
+          'kwazulu-natal': 'KwaZulu-Natal',
+          'kwazulu natal': 'KwaZulu-Natal',
+          'eastern cape': 'Eastern Cape',
+          'free state': 'Free State',
+          'limpopo': 'Limpopo',
+          'mpumalanga': 'Mpumalanga',
+          'northern cape': 'Northern Cape',
+          'north west': 'North West',
+          'northwest': 'North West',
+        };
+        
+        const regionLower = item.text.toLowerCase();
+        components.province = provinceMap[regionLower] || item.text;
       }
-    }
+    });
     
-    // Check for postal code (4 digits)
-    if (/^\d{4}$/.test(parts[i])) {
-      components.zipCode = parts[i];
-    }
+    // Use the full place_name as address
+    components.address = selectedAddress.label || selectedAddress.address.place_name;
+  } else {
+    // Fallback: Parse from label string
+    const label = typeof selectedAddress === 'string' ? selectedAddress : selectedAddress.label;
+    components.address = label;
     
-    // Extract city (usually appears before province)
-    if (!components.city && i > 0 && i < parts.length - 1) {
-      // Skip if it's a number or province
-      if (!/^\d/.test(parts[i]) && !part.includes('south africa')) {
-        let isProvince = false;
-        for (const key of Object.keys(provinceMap)) {
-          if (part.includes(key)) {
-            isProvince = true;
-            break;
-          }
+    const parts = label.split(',').map(p => p.trim());
+    
+    const provinceMap = {
+      'gauteng': 'Gauteng',
+      'western cape': 'Western Cape',
+      'kwazulu-natal': 'KwaZulu-Natal',
+      'kwazulu natal': 'KwaZulu-Natal',
+      'eastern cape': 'Eastern Cape',
+      'free state': 'Free State',
+      'limpopo': 'Limpopo',
+      'mpumalanga': 'Mpumalanga',
+      'northern cape': 'Northern Cape',
+      'north west': 'North West',
+      'northwest': 'North West',
+    };
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i].toLowerCase().trim();
+      
+      // Check for province
+      for (const [key, value] of Object.entries(provinceMap)) {
+        if (part.includes(key)) {
+          components.province = value;
+          break;
         }
-        if (!isProvince && !/^\d{4}$/.test(parts[i])) {
-          components.city = parts[i];
+      }
+      
+      // Check for postal code (4 digits)
+      if (/^\d{4}$/.test(parts[i])) {
+        components.zipCode = parts[i];
+      }
+      
+      // Extract city (usually appears before province)
+      if (!components.city && i > 0 && i < parts.length - 1) {
+        if (!/^\d/.test(parts[i]) && !part.includes('south africa')) {
+          let isProvince = false;
+          for (const key of Object.keys(provinceMap)) {
+            if (part.includes(key)) {
+              isProvince = true;
+              break;
+            }
+          }
+          if (!isProvince && !/^\d{4}$/.test(parts[i])) {
+            components.city = parts[i];
+          }
         }
       }
     }

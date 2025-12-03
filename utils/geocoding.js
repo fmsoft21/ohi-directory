@@ -133,7 +133,7 @@ export async function geocodeAddress(address, options = {}) {
     googleApiKey = process.env.GOOGLE_MAPS_API_KEY,
     mapboxApiKey = process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
     locationiqApiKey = process.env.LOCATIONIQ_API_KEY,
-    preferredProvider = 'nominatim'
+    preferredProvider = 'mapbox'
   } = options;
 
   // Build full address string from components

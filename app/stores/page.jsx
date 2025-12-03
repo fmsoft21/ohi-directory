@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import StoreFilterSort from "@/assets/components/StoreFilterSort";
 import Loading from "@/app/loading";
-import StoresMapView from '@/assets/components/MapLibreStoresMap';
+import Mapbox3DStoresMap from '@/assets/components/Mapbox3DStoresMap';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -112,7 +112,7 @@ const StoresPage = () => {
       {/* Map Dialog */}
       <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
         <DialogTitle className="sr-only">Stores Map</DialogTitle>
-        <DialogContent className="w-screen h-screen max-w-none p-0 gap-0 border-none">
+        <DialogContent className="w-screen h-[100dvh] max-h-[100dvh] max-w-none p-0 gap-0 border-none overflow-hidden">
           <div className="relative w-full h-full">
             <Button
               onClick={() => setShowMapDialog(false)}
@@ -123,11 +123,11 @@ const StoresPage = () => {
               <X className="h-5 w-5 text-white" />
             </Button>
             <div className="w-full h-full">
-              <StoresMapView 
+              <Mapbox3DStoresMap 
                 stores={stores} 
                 onStoreSelect={(storeId) => {
                   handleStoreSelect(storeId);
-                  setShowMapDialog(false);
+                  // Don't close the dialog - let the user view the store card
                 }}
               />
             </div>

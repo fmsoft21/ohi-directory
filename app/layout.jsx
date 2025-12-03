@@ -49,9 +49,9 @@ const MainLayout = ({ children }) => {
         <Providers>
           <DisableZoom />
           <Navbar />
-          <MobileLayoutWrapper>
+          {/* <MobileLayoutWrapper> */}
             <div suppressHydrationWarning>{children}</div>
-          </MobileLayoutWrapper>
+          {/* </MobileLayoutWrapper> */}
           <Footer />
           <Toaster />
         </Providers>

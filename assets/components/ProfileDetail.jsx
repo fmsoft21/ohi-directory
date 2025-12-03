@@ -112,7 +112,7 @@ const ProfileDetail = () => {
   // Handle address selection from dropdown
   const handleSelectAddress = async (selectedAddress) => {
     // Extract and update address components
-    const components = extractAddressComponents(selectedAddress.label);
+    const components = extractAddressComponents(selectedAddress);
     
     setFormData((prev) => ({
       ...prev,
