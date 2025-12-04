@@ -53,10 +53,10 @@ export default function UpgradeToSellerButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-emerald-600 hover:bg-emerald-700">
-          <Store className="h-4 w-4 mr-2" />
-          Become a Seller
-        </Button>
+        <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg text-white cursor-pointer hover:from-emerald-600 hover:to-teal-700 transition-all">
+          <p className="font-semibold mb-1">Become a Seller</p>
+          <p className="text-xs opacity-90">Start selling your products today!</p>
+        </div>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

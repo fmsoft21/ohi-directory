@@ -43,8 +43,8 @@ import ImageUploadCard from "./ImageUploadCard";
 const EditProductForm = () => {
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
-  // Add state for tracking removed images
   const [removedImages, setRemovedImages] = useState([]);
+  const [errors, setErrors] = useState({});
   const { id } = useParams();
   const router = useRouter();
 
@@ -60,10 +60,14 @@ const EditProductForm = () => {
     category: "",
     status: "draft",
     deliveryOptions: {
-      delivery: false,
-      collection: false,
+      methods: [], // Array of: 'pudo', 'door-to-door', 'pargo', 'own-delivery'
+      collection: "no-collection", // 'collection-allowed' or 'no-collection'
     },
-    keywords: "",
+    dimensions: {
+      length: 0,
+      width: 0,
+      height: 0,
+    },
     warranty: "",
     shippingOrigin: "",
     featured: "",
@@ -71,14 +75,47 @@ const EditProductForm = () => {
     images: [],
   });
 
+  // Delivery method options
+  const deliveryMethods = [
+    { id: "pudo", label: "PUDO (Locker to Locker)" },
+    { id: "door-to-door", label: "Door to Door" },
+    { id: "pargo", label: "Pargo" },
+  ];
+
   useEffect(() => {
-    // Fetch product data using your fetchProduct function
     const fetchProductData = async () => {
       try {
         const productData = await fetchProduct(id);
 
-        // Populate the fields state with the fetched data
-        setFields(productData);
+        // Migrate old deliveryOptions format to new format if needed
+        let deliveryOptions = productData.deliveryOptions;
+        if (deliveryOptions) {
+          // Check if it's the old format (has 'delivery' and 'collection' booleans)
+          if (typeof deliveryOptions.delivery === "boolean") {
+            deliveryOptions = {
+              methods: deliveryOptions.delivery ? ["door-to-door"] : [],
+              collection: deliveryOptions.collection ? "collection-allowed" : "no-collection",
+            };
+          }
+          // Ensure methods is an array
+          if (!Array.isArray(deliveryOptions.methods)) {
+            deliveryOptions.methods = [];
+          }
+          // Ensure collection has a valid value
+          if (!["collection-allowed", "no-collection"].includes(deliveryOptions.collection)) {
+            deliveryOptions.collection = "no-collection";
+          }
+        } else {
+          deliveryOptions = {
+            methods: [],
+            collection: "no-collection",
+          };
+        }
+
+        setFields({
+          ...productData,
+          deliveryOptions,
+        });
         setPreviewImage(productData.thumbnail);
         setLoading(false);
       } catch (error) {
@@ -87,10 +124,9 @@ const EditProductForm = () => {
     };
 
     fetchProductData();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
-    // Cleanup function for object URLs
     return () => {
       fields.images.forEach((img) => {
         if (img instanceof File) {
@@ -99,6 +135,46 @@ const EditProductForm = () => {
       });
     };
   }, [fields.images]);
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!fields.title.trim()) {
+      newErrors.title = "Product name is required";
+    }
+
+    if (!fields.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    if (!fields.category) {
+      newErrors.category = "Category is required";
+    }
+
+    if (!fields.price || fields.price <= 0) {
+      newErrors.price = "Price must be greater than 0";
+    }
+
+    if (!fields.stock || fields.stock < 0) {
+      newErrors.stock = "Stock must be 0 or greater";
+    }
+
+    if (!fields.status) {
+      newErrors.status = "Status is required";
+    }
+
+    if (fields.images.length === 0) {
+      newErrors.images = "At least one product image is required";
+    }
+
+    if (fields.deliveryOptions.methods.length === 0 && fields.deliveryOptions.collection === "no-collection") {
+      newErrors.deliveryOptions = "Select at least one delivery method or allow collection";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleFieldChange = (field, value, index = null, action = "update") => {
     setFields((prev) => {
@@ -115,15 +191,16 @@ const EditProductForm = () => {
       }
       return { ...prev, [field]: value };
     });
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
-  // Handlers
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Check if nested property
     if (name.includes(".")) {
       const [outerKey, innerKey] = name.split(".");
-
       setFields((prevFields) => ({
         ...prevFields,
         [outerKey]: {
@@ -132,50 +209,83 @@ const EditProductForm = () => {
         },
       }));
     } else {
-      // Not nested
       setFields((prevFields) => ({
         ...prevFields,
         [name]: value,
       }));
     }
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
-  // Handler for select input changes
+
   const handleSelectChange = (name, value) => {
     setFields((prev) => ({
       ...prev,
       [name]: value,
     }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  // Add handler for delivery options
-  const handleDeliveryOptionsChange = (option, checked) => {
+  // Handler for delivery method checkbox changes
+  const handleDeliveryMethodChange = (method, checked) => {
     setFields((prev) => ({
       ...prev,
       deliveryOptions: {
         ...prev.deliveryOptions,
-        [option]: checked,
+        methods: checked
+          ? [...prev.deliveryOptions.methods, method]
+          : prev.deliveryOptions.methods.filter((m) => m !== method),
       },
     }));
+    if (errors.deliveryOptions) {
+      setErrors((prev) => ({ ...prev, deliveryOptions: undefined }));
+    }
+  };
+
+  // Handler for collection option change
+  const handleCollectionChange = (value) => {
+    setFields((prev) => ({
+      ...prev,
+      deliveryOptions: {
+        ...prev.deliveryOptions,
+        collection: value,
+      },
+    }));
+    if (errors.deliveryOptions) {
+      setErrors((prev) => ({ ...prev, deliveryOptions: undefined }));
+    }
   };
 
   const handleRemoveImage = (imageUrl) => {
     setRemovedImages((prev) => [...prev, imageUrl]);
   };
 
-  // Update handleSubmit to properly handle the image upload
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+      });
+      return;
+    }
+
     const submitButtons = e.target.querySelectorAll('button[type="submit"]');
     submitButtons.forEach((btn) => {
       btn.disabled = true;
       btn.textContent = "Updating...";
     });
+
     try {
       const formData = new FormData();
 
-      // Add all non-file fields
       Object.keys(fields).forEach((key) => {
-        if (key !== "images" && key !== "deliveryOptions") {
+        if (key !== "images" && key !== "deliveryOptions" && key !== "dimensions") {
           formData.append(key, fields[key]);
         }
       });
@@ -184,9 +294,12 @@ const EditProductForm = () => {
         "deliveryOptions",
         JSON.stringify(fields.deliveryOptions),
       );
-      // Add removed images array
+      formData.append(
+        "dimensions",
+        JSON.stringify(fields.dimensions),
+      );
       formData.append("removedImages", JSON.stringify(removedImages));
-      // Handle images - only append File objects
+
       fields.images.forEach((image) => {
         if (image instanceof File) {
           formData.append("images", image);
@@ -219,11 +332,13 @@ const EditProductForm = () => {
         description:
           error.message || "Failed to update product. Please try again.",
       });
+    } finally {
+      submitButtons.forEach((btn) => {
+        btn.disabled = false;
+        btn.textContent = "Update Product";
+      });
     }
   };
-
-  // Update handleSubmit to match AddProductForm image processing
-  // Add these functions after the handleImageChange function
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" data-oid="0g5lfck">
@@ -262,9 +377,9 @@ const EditProductForm = () => {
               data-oid="1ifcrm0"
             >
               <Link href="/dashboard/products">
-              <Button variant="outline" size="sm" data-oid="hrrlpz6">
-                Discard
-              </Button>
+                <Button variant="outline" size="sm" data-oid="hrrlpz6">
+                  Discard
+                </Button>
               </Link>
               <Button type="submit" size="sm" data-oid="k:b5c-t">
                 Update Product
@@ -295,33 +410,39 @@ const EditProductForm = () => {
                     {/* Product name input */}
                     <div className="grid gap-3" data-oid="0bb53tv">
                       <Label htmlFor="name" data-oid="vg1sr3z">
-                        Name
+                        Name <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="name"
                         type="text"
                         name="title"
-                        className="w-full"
+                        className={`w-full ${errors.title ? "border-red-500" : ""}`}
                         placeholder="Enter a name for your product"
                         value={fields.title}
                         onChange={handleChange}
                         data-oid="9x1.kze"
                       />
+                      {errors.title && (
+                        <p className="text-sm text-red-500">{errors.title}</p>
+                      )}
                     </div>
                     {/* Product description textarea */}
                     <div className="grid gap-3" data-oid="sj1u57l">
                       <Label htmlFor="description" data-oid="y66fwd6">
-                        Description
+                        Description <span className="text-red-500">*</span>
                       </Label>
                       <Textarea
                         id="description"
-                        className="min-h-32"
+                        className={`min-h-32 ${errors.description ? "border-red-500" : ""}`}
                         placeholder="Enter a brief description of the product features and any relevant information."
                         name="description"
                         value={fields.description}
                         onChange={handleChange}
                         data-oid="0vd3rcg"
                       />
+                      {errors.description && (
+                        <p className="text-sm text-red-500">{errors.description}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -337,7 +458,7 @@ const EditProductForm = () => {
                     {/* Category select */}
                     <div className="grid gap-3" data-oid="65f_ijn">
                       <Label htmlFor="category" data-oid="_i9ks_6">
-                        Category
+                        Category <span className="text-red-500">*</span>
                       </Label>
                       <Select
                         name="category"
@@ -347,7 +468,11 @@ const EditProductForm = () => {
                         }
                         data-oid="-viw3am"
                       >
-                        <SelectTrigger id="category" data-oid="ufolcyo">
+                        <SelectTrigger 
+                          id="category" 
+                          className={errors.category ? "border-red-500" : ""}
+                          data-oid="ufolcyo"
+                        >
                           <SelectValue
                             placeholder="Select category"
                             data-oid="dndso2b"
@@ -376,38 +501,22 @@ const EditProductForm = () => {
                           <SelectItem value="groceries-essentials">Groceries & Essentials</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.category && (
+                        <p className="text-sm text-red-500">{errors.category}</p>
+                      )}
                     </div>
-                    {/* Brand select */}
+                    {/* Brand input */}
                     <div className="grid gap-3" data-oid="fa.t-iv">
                       <Label htmlFor="brand" data-oid="wdc3c-7">
                         Brand (optional)
                       </Label>
-                      <Select
+                      <Input
                         name="brand"
+                        placeholder="Product Brand"
                         value={fields.brand}
-                        onValueChange={(value) =>
-                          handleSelectChange("brand", value)
-                        }
+                        onChange={handleChange}
                         data-oid="dyu.smg"
-                      >
-                        <SelectTrigger id="brand" data-oid="mtfeede">
-                          <SelectValue
-                            placeholder="Select brand"
-                            data-oid="1ozoo5i"
-                          />
-                        </SelectTrigger>
-                        <SelectContent data-oid="ntdyjqf">
-                          <SelectItem value="brand1" data-oid="fugw_vg">
-                            Brand 1
-                          </SelectItem>
-                          <SelectItem value="brand2" data-oid="5xry.f5">
-                            Brand 2
-                          </SelectItem>
-                          <SelectItem value="brand3" data-oid="72ml:-v">
-                            Brand 3
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -417,21 +526,17 @@ const EditProductForm = () => {
               <Card x-chunk="dashboard-07-chunk-1" data-oid="_qdvm__">
                 <CardHeader data-oid="xk_gqtj">
                   <CardTitle data-oid=":g-ef56">Stock</CardTitle>
-                  <CardDescription data-oid="c4w3d9n">
-                    Lipsum dolor sit amet, consectetur adipiscing elit
-                  </CardDescription>
                 </CardHeader>
                 <CardContent data-oid="ee51f7n">
                   <Table data-oid="27ikmwr">
                     <TableHeader data-oid="srx4_89">
                       <TableRow data-oid="_sy_1ag">
-                        <TableHead data-oid="l1ng-u3">Stock</TableHead>
-                        <TableHead data-oid="5-glmr1">Price</TableHead>
+                        <TableHead data-oid="l1ng-u3">Stock <span className="text-red-500">*</span></TableHead>
+                        <TableHead data-oid="5-glmr1">Price <span className="text-red-500">*</span></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody data-oid="g52g8pq">
                       <TableRow data-oid="86zyl1j">
-                        {/* Stock input */}
                         <TableCell data-oid="zycoosw">
                           <Label
                             htmlFor="stock-1"
@@ -447,10 +552,13 @@ const EditProductForm = () => {
                             placeholder="Enter number of items in stock"
                             value={fields.stock}
                             onChange={handleChange}
+                            className={errors.stock ? "border-red-500" : ""}
                             data-oid="rk5simd"
                           />
+                          {errors.stock && (
+                            <p className="text-sm text-red-500 mt-1">{errors.stock}</p>
+                          )}
                         </TableCell>
-                        {/* Price input */}
                         <TableCell data-oid="39-..ie">
                           <Label
                             htmlFor="price-1"
@@ -466,8 +574,12 @@ const EditProductForm = () => {
                             name="price"
                             value={fields.price}
                             onChange={handleChange}
+                            className={errors.price ? "border-red-500" : ""}
                             data-oid="fk6cuoz"
                           />
+                          {errors.price && (
+                            <p className="text-sm text-red-500 mt-1">{errors.price}</p>
+                          )}
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -484,23 +596,53 @@ const EditProductForm = () => {
                 </CardHeader>
                 <CardContent data-oid="e_4ioc:">
                   <div className="grid gap-6" data-oid="ut_8:-3">
-                    {/* Keywords */}
                     <div className="grid gap-3" data-oid=":cmhesr">
-                      <Label htmlFor="keywords" data-oid="v509qwr">
-                        Keywords
+                      <Label data-oid="v509qwr">
+                        Product Dimensions (cm)
                       </Label>
-                      <Input
-                        id="keywords"
-                        type="text"
-                        placeholder="What categroy or domain would you say your products belong to?"
-                        name="keywords"
-                        value={fields.keywords}
-                        onChange={handleChange}
-                        data-oid="e_ukqn1"
-                      />
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label htmlFor="length" className="text-xs text-muted-foreground">Length</Label>
+                          <Input
+                            id="length"
+                            type="number"
+                            placeholder="0"
+                            name="dimensions.length"
+                            value={fields.dimensions?.length}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="width" className="text-xs text-muted-foreground">Width</Label>
+                          <Input
+                            id="width"
+                            type="number"
+                            placeholder="0"
+                            name="dimensions.width"
+                            value={fields.dimensions?.width}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="height" className="text-xs text-muted-foreground">Height</Label>
+                          <Input
+                            id="height"
+                            type="number"
+                            placeholder="0"
+                            name="dimensions.height"
+                            value={fields.dimensions?.height}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Warranty */}
                     <div className="grid gap-3" data-oid="s2kjrqt">
                       <Label htmlFor="warranty" data-oid="k9.:z.q">
                         Warranty
@@ -516,7 +658,6 @@ const EditProductForm = () => {
                       />
                     </div>
 
-                    {/* Shipping Origin */}
                     <div className="grid gap-3" data-oid="c.5sc-:">
                       <Label htmlFor="shipping-origin" data-oid=".qdkwmu">
                         Shipping Origin
@@ -531,23 +672,11 @@ const EditProductForm = () => {
                         data-oid="on2or3l"
                       />
                     </div>
-
-                    {/* Featured */}
-                    {/* <div className="grid gap-3">
-                          <Label htmlFor="featured">Featured</Label>
-                          <Input
-                            id="featured"
-                            type="text"
-                            placeholder="Enter featured status or category"
-                            name="featured"
-                            value={fields.featured}
-                            onChange={handleChange}
-                          />
-                         </div> */}
                   </div>
                 </CardContent>
               </Card>
             </div>
+
             {/* Right column */}
             <div
               className="grid auto-rows-max items-start gap-4 lg:gap-8"
@@ -562,7 +691,7 @@ const EditProductForm = () => {
                   <div className="grid gap-6" data-oid="oxjg-.6">
                     <div className="grid gap-3" data-oid="kmhxi:m">
                       <Label htmlFor="status" data-oid="8bvv79.">
-                        Status
+                        Status <span className="text-red-500">*</span>
                       </Label>
                       <Select
                         name="status"
@@ -572,7 +701,10 @@ const EditProductForm = () => {
                         }
                         data-oid="y50hn_w"
                       >
-                        <SelectTrigger data-oid="0_4cahv">
+                        <SelectTrigger 
+                          className={errors.status ? "border-red-500" : ""}
+                          data-oid="0_4cahv"
+                        >
                           <SelectValue
                             placeholder="Select status"
                             data-oid="gm1nd.u"
@@ -587,6 +719,9 @@ const EditProductForm = () => {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.status && (
+                        <p className="text-sm text-red-500">{errors.status}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -605,46 +740,61 @@ const EditProductForm = () => {
               {/* Delivery Options Card */}
               <Card data-oid="szcazgk">
                 <CardHeader data-oid="7fip7lz">
-                  <CardTitle data-oid="pol2dhc">Delivery Options</CardTitle>
+                  <CardTitle data-oid="pol2dhc">Delivery & Collection Options</CardTitle>
+                  <CardDescription>
+                    Select available delivery methods and collection options
+                  </CardDescription>
                 </CardHeader>
                 <CardContent data-oid="1nsob.f">
                   <div className="grid gap-6" data-oid="kec8ef-">
-                    {/* Delivery Available Checkbox */}
-                    <div
-                      className="flex items-center space-x-2"
-                      data-oid="_l770-2"
-                    >
-                      <Checkbox
-                        id="delivery-available"
-                        checked={fields.deliveryOptions.delivery}
-                        onCheckedChange={(checked) =>
-                          handleDeliveryOptionsChange("delivery", checked)
-                        }
-                        data-oid="gd3t96:"
-                      />
-
-                      <Label htmlFor="delivery-available" data-oid="im5696i">
-                        Delivery Available
-                      </Label>
+                    {/* Delivery Methods */}
+                    <div className="grid gap-3">
+                      <Label>Delivery Methods</Label>
+                      <div className="grid gap-3">
+                        {deliveryMethods.map((method) => (
+                          <div
+                            key={method.id}
+                            className="flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              id={`delivery-${method.id}`}
+                              checked={fields.deliveryOptions.methods.includes(method.id)}
+                              onCheckedChange={(checked) =>
+                                handleDeliveryMethodChange(method.id, checked)
+                              }
+                            />
+                            <Label htmlFor={`delivery-${method.id}`} className="font-normal">
+                              {method.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {/* Collection Available Checkbox */}
-                    <div
-                      className="flex items-center space-x-2"
-                      data-oid="jva-m6z"
-                    >
-                      <Checkbox
-                        id="collection-available"
-                        checked={fields.deliveryOptions.collection}
-                        onCheckedChange={(checked) =>
-                          handleDeliveryOptionsChange("collection", checked)
-                        }
-                        data-oid="d5:jbfc"
-                      />
 
-                      <Label htmlFor="collection-available" data-oid=":lbeq9-">
-                        Collection Available
-                      </Label>
+                    {/* Collection Option */}
+                    <div className="grid gap-3">
+                      <Label htmlFor="collection-option">Collection Option</Label>
+                      <Select
+                        value={fields.deliveryOptions.collection}
+                        onValueChange={handleCollectionChange}
+                      >
+                        <SelectTrigger id="collection-option">
+                          <SelectValue placeholder="Select collection option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="collection-allowed">
+                            Collection Allowed
+                          </SelectItem>
+                          <SelectItem value="no-collection">
+                            No Collection Allowed
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {errors.deliveryOptions && (
+                      <p className="text-sm text-red-500">{errors.deliveryOptions}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

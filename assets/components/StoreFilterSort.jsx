@@ -142,7 +142,7 @@ export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, 
               onClick={() => onViewModeChange('grid')}
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              className={`h-8 w-8 p-0 ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : ''}`}
+              className={`h-8 w-8 p-0`}
             >
               <Grid3x3 className="h-4 w-4" />
             </Button>
@@ -150,7 +150,7 @@ export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, 
               onClick={() => onViewModeChange('list')}
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              className={`h-8 w-8 p-0 ${viewMode === 'list' ? 'bg-emerald-600 text-white' : ''}`}
+              className={`h-8 w-8 p-0`}
             >
               <List className="h-4 w-4" />
             </Button>

@@ -64,17 +64,29 @@ const ProductSchema = new Schema(
       type: String,
     },
     deliveryOptions: {
-      delivery: { 
-        type: Boolean, 
-        default: false 
-      },
+      methods: [{ 
+        type: String,
+        // enum: ['pudo', 'door-to-door', 'pargo', 'own-delivery']
+      }],
       collection: { 
-        type: Boolean, 
-        default: false 
+        type: String,
+        // enum: ['collection-allowed', 'no-collection'],
+        default: 'no-collection'
       }
     },
-    keywords: {
-      type: String,
+    dimensions: {
+      length: {
+        type: Number,
+        default: 0,
+      },
+      width: {
+        type: Number,
+        default: 0,
+      },
+      height: {
+        type: Number,
+        default: 0,
+      },
     },
     warranty: {
       type: String,

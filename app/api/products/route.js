@@ -66,7 +66,7 @@ export const POST = async (request) => {
       category: formData.get('category'),
       status: formData.get('status'),
       deliveryOptions: JSON.parse(formData.get('deliveryOptions')),
-      keywords: formData.get('keywords'),
+      dimensions: JSON.parse(formData.get('dimensions')),
       featured: formData.get('featured'),
       rating: formData.get('rating') || 0,
       warranty: formData.get('warranty'),

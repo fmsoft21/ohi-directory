@@ -39,6 +39,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useMessages } from "@/assets/contexts/MessagesContext";
 import { useSession } from "next-auth/react";
+import UpgradeToSellerButton from "./UpgradeToSellerButton";
 
 const breadcrumbs = [
   { label: "Dashboard", link: "/dashboard" },
@@ -311,12 +312,7 @@ export default function DashboardShell({ children }) {
                 {/* Upgrade to Seller CTA (only for buyers) */}
                 {!isSeller && (
                   <li className="mt-auto mb-4">
-                    <Link href="/become-seller">
-                      <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg text-white">
-                        <p className="font-semibold mb-1">Become a Seller</p>
-                        <p className="text-xs opacity-90">Start selling your products today!</p>
-                      </div>
-                    </Link>
+                    <UpgradeToSellerButton />
                   </li>
                 )}
 

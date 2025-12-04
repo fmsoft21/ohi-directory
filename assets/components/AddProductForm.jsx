@@ -52,16 +52,23 @@ const AddProductForm = () => {
     status: "",
     category: "",
     deliveryOptions: {
-      delivery: true,
-      collection: false,
+      methods: [], // Array of: 'pudo', 'door-to-door', 'pargo', 'own-delivery'
+      collection: "no-collection", // 'collection-allowed' or 'no-collection'
     },
-    keywords: "",
+    dimensions: {
+      length: 0,
+      width: 0,
+      height: 0,
+    },
     warranty: "",
     shippingOrigin: "",
     featured: "",
     thumbnail: "",
     images: [],
   });
+
+  // Validation errors state
+  const [errors, setErrors] = useState({});
 
   // Fetch user data on mount to set shipping origin
   useEffect(() => {
@@ -94,21 +101,113 @@ const AddProductForm = () => {
   // State to hold the currently previewed image
   const [previewImage, setPreviewImage] = useState(null);
 
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Required field validations
+    if (!fields.title.trim()) {
+      newErrors.title = "Product name is required";
+    }
+
+    if (!fields.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    if (!fields.category) {
+      newErrors.category = "Category is required";
+    }
+
+    if (!fields.price || fields.price <= 0) {
+      newErrors.price = "Price must be greater than 0";
+    }
+
+    if (!fields.stock || fields.stock < 0) {
+      newErrors.stock = "Stock must be 0 or greater";
+    }
+
+    if (!fields.status) {
+      newErrors.status = "Status is required";
+    }
+
+    if (fields.images.length === 0) {
+      newErrors.images = "At least one product image is required";
+    }
+
+    // Delivery options validation
+    if (fields.deliveryOptions.methods.length === 0 && fields.deliveryOptions.collection === "no-collection") {
+      newErrors.deliveryOptions = "Select at least one delivery method or allow collection";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // Handler for input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFields((prevFields) => ({
-      ...prevFields,
-      [name]: value,
-    }));
-  };
 
+    if (name.includes(".")) {
+      const [outerKey, innerKey] = name.split(".");
+      setFields((prevFields) => ({
+        ...prevFields,
+        [outerKey]: {
+          ...prevFields[outerKey],
+          [innerKey]: value,
+        },
+      }));
+    } else {
+      setFields((prevFields) => ({
+        ...prevFields,
+        [name]: value,
+      }));
+    }
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
   // Handler for select input changes
   const handleSelectChange = (name, value) => {
     setFields((prevFields) => ({
       ...prevFields,
       [name]: value,
     }));
+    // Clear error when field is edited
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  // Handler for delivery method checkbox changes
+  const handleDeliveryMethodChange = (method, checked) => {
+    setFields((prev) => ({
+      ...prev,
+      deliveryOptions: {
+        ...prev.deliveryOptions,
+        methods: checked
+          ? [...prev.deliveryOptions.methods, method]
+          : prev.deliveryOptions.methods.filter((m) => m !== method),
+      },
+    }));
+    // Clear delivery options error
+    if (errors.deliveryOptions) {
+      setErrors((prev) => ({ ...prev, deliveryOptions: undefined }));
+    }
+  };
+
+  // Handler for collection option change
+  const handleCollectionChange = (value) => {
+    setFields((prev) => ({
+      ...prev,
+      deliveryOptions: {
+        ...prev.deliveryOptions,
+        collection: value,
+      },
+    }));
+    // Clear delivery options error
+    if (errors.deliveryOptions) {
+      setErrors((prev) => ({ ...prev, deliveryOptions: undefined }));
+    }
   };
 
   // Handler for image uploads
@@ -142,6 +241,11 @@ const AddProductForm = () => {
           }));
           setImageFiles(updatedFiles);
 
+          // Clear images error
+          if (errors.images) {
+            setErrors((prev) => ({ ...prev, images: undefined }));
+          }
+
           // Set preview image
           if (index === undefined || index === updatedImages.length - 1) {
             setPreviewImage(imageDataUrl);
@@ -160,20 +264,14 @@ const AddProductForm = () => {
 
       // Update preview image if necessary
       if (previewImage === prevFields.images[index]) {
-        // If the removed image was the preview, set the first remaining image as preview
-        // or null if no images remain
         setPreviewImage(newImages.length > 0 ? newImages[0] : null);
       }
 
-      // If the removed image is an existing URL (likely from server), track it so
-      // the server can delete the resource when updating. We assume server URLs
-      // start with http(s) whereas local previews are data URLs starting with data:
       const removed = prevFields.images[index];
       if (removed && typeof removed === "string" && removed.startsWith("http")) {
         setRemovedImages((prev) => [...prev, removed]);
       }
 
-      // Also remove corresponding file object if present
       setImageFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
 
       return {
@@ -185,8 +283,8 @@ const AddProductForm = () => {
 
   // Handler for image removal (prevents form submission and event bubbling)
   const handleRemoveImage = (e, index) => {
-    e.preventDefault(); // Prevent form submission
-    e.stopPropagation(); // Stop event from bubbling up
+    e.preventDefault();
+    e.stopPropagation();
     removeImage(index);
   };
 
@@ -198,12 +296,16 @@ const AddProductForm = () => {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate form before submission
+    if (!validateForm()) {
+      return;
+    }
+
     const submitButton = e.target.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     submitButton.textContent = "Uploading...";
 
     try {
-      // Build FormData manually to ensure File objects are sent as-is
       const formData = new FormData();
 
       // Append scalar fields
@@ -215,7 +317,7 @@ const AddProductForm = () => {
       formData.append("stock", fields.stock ?? 0);
       formData.append("brand", fields.brand || "");
       formData.append("category", fields.category || "");
-      formData.append("keywords", fields.keywords || "");
+      formData.append("dimensions", JSON.stringify(fields.dimensions));
       formData.append("warranty", fields.warranty || "");
       formData.append("shippingOrigin", fields.shippingOrigin || "");
       formData.append("featured", fields.featured || "");
@@ -227,7 +329,7 @@ const AddProductForm = () => {
         JSON.stringify(fields.deliveryOptions || {}),
       );
 
-      // Append image files (if any) in order
+      // Append image files
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         if (file instanceof File) {
@@ -235,7 +337,6 @@ const AddProductForm = () => {
         }
       }
 
-      // Send removedImages array so backend can delete stored images when editing
       formData.append("removedImages", JSON.stringify(removedImages || []));
 
       const response = await fetch("/api/products", {
@@ -257,12 +358,19 @@ const AddProductForm = () => {
       submitButton.textContent = "Submit Product";
     }
   };
+
+  // Delivery method options
+  const deliveryMethods = [
+    { id: "pudo", label: "PUDO (Locker to Locker)" },
+    { id: "door-to-door", label: "Door to Door" },
+    { id: "pargo", label: "Pargo" },
+  ];
+
   return (
-    // Main form component
     <form
       action="/api/products"
       method="POST"
-    encType="multipart/form-data"
+      encType="multipart/form-data"
       onSubmit={handleOnSubmit}
       data-oid="aew3r_u"
     >
@@ -336,33 +444,39 @@ const AddProductForm = () => {
                     {/* Product name input */}
                     <div className="grid gap-3" data-oid="igejhe0">
                       <Label htmlFor="name" data-oid="8xel1bo">
-                        Name
+                        Name <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="name"
                         type="text"
                         name="title"
-                        className="w-full"
+                        className={`w-full ${errors.title ? "border-red-500" : ""}`}
                         placeholder="Enter a name for your product"
                         value={fields.title}
                         onChange={handleChange}
                         data-oid="wgfqv5e"
                       />
+                      {errors.title && (
+                        <p className="text-sm text-red-500">{errors.title}</p>
+                      )}
                     </div>
                     {/* Product description textarea */}
                     <div className="grid gap-3" data-oid="87j.2p4">
                       <Label htmlFor="description" data-oid="hn.j15q">
-                        Description
+                        Description <span className="text-red-500">*</span>
                       </Label>
                       <Textarea
                         id="description"
-                        className="min-h-32"
+                        className={`min-h-32 ${errors.description ? "border-red-500" : ""}`}
                         placeholder="Describe features of your product or any relevant information for buyers."
                         name="description"
                         value={fields.description}
                         onChange={handleChange}
                         data-oid="3jkkxnw"
                       />
+                      {errors.description && (
+                        <p className="text-sm text-red-500">{errors.description}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -378,7 +492,7 @@ const AddProductForm = () => {
                     {/* Category select */}
                     <div className="grid gap-3" data-oid="80nzak0">
                       <Label htmlFor="category" data-oid="xfggini">
-                        Category
+                        Category <span className="text-red-500">*</span>
                       </Label>
                       <Select
                         name="category"
@@ -388,37 +502,44 @@ const AddProductForm = () => {
                         }
                         data-oid="uwjmux5"
                       >
-                        <SelectTrigger id="category" data-oid="qyl9h9x">
+                        <SelectTrigger 
+                          id="category" 
+                          className={errors.category ? "border-red-500" : ""}
+                          data-oid="qyl9h9x"
+                        >
                           <SelectValue
                             placeholder="Select category"
                             data-oid="ehx8_cw"
                           />
                         </SelectTrigger>
                         <SelectContent data-oid="v98.u-0">
-                          <SelectItem value="fashion-apparel">Fashion & Apparel</SelectItem>
-                          <SelectItem value="footwear-accessories">Footwear & Accessories</SelectItem>
-                          <SelectItem value="jewelry-watches">Jewelry & Watches</SelectItem>
-                          <SelectItem value="beauty-personal-care">Beauty & Personal Care</SelectItem>
-                          <SelectItem value="health-wellness">Health & Wellness</SelectItem>
-                          <SelectItem value="devices-electronics">Devices & Electronics</SelectItem>
-                          <SelectItem value="computers-accessories">Computers & Accessories</SelectItem>
-                          <SelectItem value="home-living">Home & Living</SelectItem>
-                          <SelectItem value="kitchen-dining">Kitchen & Dining</SelectItem>
-                          <SelectItem value="furniture-decor">Furniture & Decor</SelectItem>
-                          <SelectItem value="sports-outdoors">Sports & Outdoors</SelectItem>
-                          <SelectItem value="fitness-training">Fitness & Training</SelectItem>
-                          <SelectItem value="books-stationery">Books & Stationery</SelectItem>
-                          <SelectItem value="toys-games">Toys & Games</SelectItem>
-                          <SelectItem value="infants-toddlers">Infants & Toddlers</SelectItem>
-                          <SelectItem value="kids-teens">Kids & Teens</SelectItem>
-                          <SelectItem value="pets-supplies">Pets & Supplies</SelectItem>
-                          <SelectItem value="automotive-tools">Automotive & Tools</SelectItem>
-                          <SelectItem value="garden-outdoor">Garden & Outdoor Living</SelectItem>
-                          <SelectItem value="groceries-essentials">Groceries & Essentials</SelectItem>
+                          <SelectItem value="Fashion & Apparel">Fashion & Apparel</SelectItem>
+                          <SelectItem value="Footwear & Accessories">Footwear & Accessories</SelectItem>
+                          <SelectItem value="Jewelry & Watches">Jewelry & Watches</SelectItem>
+                          <SelectItem value="Beauty & Personal Care">Beauty & Personal Care</SelectItem>
+                          <SelectItem value="Health & Wellness">Health & Wellness</SelectItem>
+                          <SelectItem value="Devices & Electronics">Devices & Electronics</SelectItem>
+                          <SelectItem value="Computers & Accessories">Computers & Accessories</SelectItem>
+                          <SelectItem value="Home & Living">Home & Living</SelectItem>
+                          <SelectItem value="Kitchen & Dining">Kitchen & Dining</SelectItem>
+                          <SelectItem value="Furniture & Decor">Furniture & Decor</SelectItem>
+                          <SelectItem value="Sports & Outdoors">Sports & Outdoors</SelectItem>
+                          <SelectItem value="Fitness & Training">Fitness & Training</SelectItem>
+                          <SelectItem value="Books & Stationery">Books & Stationery</SelectItem>
+                          <SelectItem value="Toys & Games">Toys & Games</SelectItem>
+                          <SelectItem value="Infants & Toddlers">Infants & Toddlers</SelectItem>
+                          <SelectItem value="Kids & Teens">Kids & Teens</SelectItem>
+                          <SelectItem value="Pets & Supplies">Pets & Supplies</SelectItem>
+                          <SelectItem value="Automotive & Tools">Automotive & Tools</SelectItem>
+                          <SelectItem value="Garden & Outdoor Living">Garden & Outdoor Living</SelectItem>
+                          <SelectItem value="Groceries & Essentials">Groceries & Essentials</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.category && (
+                        <p className="text-sm text-red-500">{errors.category}</p>
+                      )}
                     </div>
-                    {/* Brand select */}
+                    {/* Brand input */}
                     <div className="grid gap-3" data-oid="v5t3:hs">
                       <Label htmlFor="brand" data-oid="20o2diu">
                         Brand (optional)
@@ -429,8 +550,7 @@ const AddProductForm = () => {
                         value={fields.brand}
                         onChange={handleChange}
                         data-oid="r9vyq0u"
-                      >
-                      </Input>
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -440,14 +560,13 @@ const AddProductForm = () => {
               <Card x-chunk="dashboard-07-chunk-1" data-oid="-01h2fi">
                 <CardHeader data-oid="9wyfw8p">
                   <CardTitle data-oid="57r:x0k">Stock</CardTitle>
-                  
                 </CardHeader>
                 <CardContent data-oid="rctzls7">
                   <Table data-oid="cxu5zg6">
                     <TableHeader data-oid="rde-.y1">
                       <TableRow data-oid="ov47wv5">
-                        <TableHead data-oid="9.dwf1q">Stock</TableHead>
-                        <TableHead data-oid="zq1qfwo">Price</TableHead>
+                        <TableHead data-oid="9.dwf1q">Stock <span className="text-red-500">*</span></TableHead>
+                        <TableHead data-oid="zq1qfwo">Price <span className="text-red-500">*</span></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody data-oid="1eyt6-e">
@@ -468,8 +587,12 @@ const AddProductForm = () => {
                             placeholder="Enter number of items in stock"
                             value={fields.stock}
                             onChange={handleChange}
+                            className={errors.stock ? "border-red-500" : ""}
                             data-oid="p:9h3.e"
                           />
+                          {errors.stock && (
+                            <p className="text-sm text-red-500 mt-1">{errors.stock}</p>
+                          )}
                         </TableCell>
                         {/* Price input */}
                         <TableCell data-oid="e8p2efp">
@@ -487,8 +610,12 @@ const AddProductForm = () => {
                             name="price"
                             value={fields.price}
                             onChange={handleChange}
+                            className={errors.price ? "border-red-500" : ""}
                             data-oid="vxmn.nk"
                           />
+                          {errors.price && (
+                            <p className="text-sm text-red-500 mt-1">{errors.price}</p>
+                          )}
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -505,20 +632,52 @@ const AddProductForm = () => {
                 </CardHeader>
                 <CardContent data-oid="pnqsx0d">
                   <div className="grid gap-6" data-oid="0ustydf">
-                    {/* Keywords */}
+                    {/* Dimensions */}
                     <div className="grid gap-3" data-oid="iu84u8t">
-                      <Label htmlFor="keywords" data-oid=".sh-s3n">
-                        Keywords
+                      <Label data-oid=".sh-s3n">
+                        Product Dimensions (cm)
                       </Label>
-                      <Input
-                        id="keywords"
-                        type="text"
-                        placeholder="What categroy or domain would you say your products belong to?"
-                        name="keywords"
-                        value={fields.keywords}
-                        onChange={handleChange}
-                        data-oid="mm205mg"
-                      />
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label htmlFor="length" className="text-xs text-muted-foreground">Length</Label>
+                          <Input
+                            id="length"
+                            type="number"
+                            placeholder="0"
+                            name="dimensions.length"
+                            value={fields.dimensions?.length}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="width" className="text-xs text-muted-foreground">Width</Label>
+                          <Input
+                            id="width"
+                            type="number"
+                            placeholder="0"
+                            name="dimensions.width"
+                            value={fields.dimensions.width}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="height" className="text-xs text-muted-foreground">Height</Label>
+                          <Input
+                            id="height"
+                            type="number"
+                            placeholder="0"
+                            name="dimensions.height"
+                            value={fields.dimensions.height}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Warranty */}
@@ -552,23 +711,11 @@ const AddProductForm = () => {
                         data-oid="2h2zijf"
                       />
                     </div>
-
-                    {/* Featured */}
-                    {/* <div className="grid gap-3">
-                          <Label htmlFor="featured">Featured</Label>
-                          <Input
-                            id="featured"
-                            type="text"
-                            placeholder="Enter featured status or category"
-                            name="featured"
-                            value={fields.featured}
-                            onChange={handleChange}
-                          />
-                         </div> */}
                   </div>
                 </CardContent>
               </Card>
             </div>
+
             {/* Right column */}
             <div
               className="grid auto-rows-max items-start gap-4 lg:gap-8"
@@ -583,7 +730,7 @@ const AddProductForm = () => {
                   <div className="grid gap-6" data-oid="kz:mbj.">
                     <div className="grid gap-3" data-oid="c.uj:mq">
                       <Label htmlFor="status" data-oid="df9yt6e">
-                        Status
+                        Status <span className="text-red-500">*</span>
                       </Label>
                       <Select
                         name="status"
@@ -593,7 +740,11 @@ const AddProductForm = () => {
                         }
                         data-oid="zv_.7hy"
                       >
-                        <SelectTrigger id="status" data-oid="7ncy4k3">
+                        <SelectTrigger 
+                          id="status" 
+                          className={errors.status ? "border-red-500" : ""}
+                          data-oid="7ncy4k3"
+                        >
                           <SelectValue
                             placeholder="Select status"
                             data-oid="h6ntapn"
@@ -608,6 +759,9 @@ const AddProductForm = () => {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.status && (
+                        <p className="text-sm text-red-500">{errors.status}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -616,7 +770,9 @@ const AddProductForm = () => {
               {/* Product Images Card */}
               <Card className="overflow-hidden" data-oid="n3_ef3x">
                 <CardHeader data-oid="a97_5z7">
-                  <CardTitle data-oid="hz6k95m">Product Images</CardTitle>
+                  <CardTitle data-oid="hz6k95m">
+                    Product Images <span className="text-red-500">*</span>
+                  </CardTitle>
                   <CardDescription data-oid=":00x9sr">
                     Upload up to 5 images of your product
                   </CardDescription>
@@ -632,7 +788,6 @@ const AddProductForm = () => {
                           height="300"
                           src={previewImage || fields.images[0]}
                           width="300"
-                          value={fields.images[0]}
                           data-oid="4oh0hza"
                         />
 
@@ -713,7 +868,7 @@ const AddProductForm = () => {
                       {fields.images.length < 5 && (
                         <Label
                           htmlFor="upload"
-                          className="flex w-16 h-16 hover:cursor-pointer items-center justify-center rounded-md border border-dashed"
+                          className={`flex w-16 h-16 hover:cursor-pointer items-center justify-center rounded-md border border-dashed ${errors.images ? "border-red-500" : ""}`}
                           data-oid="rce-c0h"
                         >
                           <Input
@@ -734,83 +889,88 @@ const AddProductForm = () => {
                         </Label>
                       )}
                     </div>
+                    {errors.images && (
+                      <p className="text-sm text-red-500">{errors.images}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* <div className='space-y-4'> */}
               {/* Delivery Options Card */}
               <Card data-oid=":m04ppq">
                 <CardHeader data-oid="n-dy.7a">
-                  <CardTitle data-oid="f:eg7zz">Delivery Options</CardTitle>
+                  <CardTitle data-oid="f:eg7zz">Delivery & Collection Options</CardTitle>
+                  <CardDescription>
+                    Select available delivery methods and collection options
+                  </CardDescription>
                 </CardHeader>
                 <CardContent data-oid="ju9yu6q">
                   <div className="grid gap-6" data-oid="r0oqjyi">
-                    {/* Delivery Available Checkbox */}
-                    <div
-                      className="flex items-center space-x-2"
-                      data-oid="z2_8gtq"
-                    >
-                      <Checkbox
-                        id="delivery-available"
-                        checked={fields.deliveryOptions.delivery}
-                        onCheckedChange={(checked) =>
-                          setFields((prev) => ({
-                            ...prev,
-                            deliveryOptions: {
-                              ...prev.deliveryOptions,
-                              delivery: checked,
-                            },
-                          }))
-                        }
-                        data-oid="4y.3v40"
-                      />
-
-                      <Label htmlFor="delivery-available" data-oid="kww2w8_">
-                        Delivery Available
-                      </Label>
+                    {/* Delivery Methods */}
+                    <div className="grid gap-3">
+                      <Label>Delivery Methods</Label>
+                      <div className="grid gap-3">
+                        {deliveryMethods.map((method) => (
+                          <div
+                            key={method.id}
+                            className="flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              id={`delivery-${method.id}`}
+                              checked={fields.deliveryOptions.methods.includes(method.id)}
+                              onCheckedChange={(checked) =>
+                                handleDeliveryMethodChange(method.id, checked)
+                              }
+                            />
+                            <Label htmlFor={`delivery-${method.id}`} className="font-normal">
+                              {method.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {/* Collection Available Checkbox */}
-                    <div
-                      className="flex items-center space-x-2"
-                      data-oid="d740rgu"
-                    >
-                      <Checkbox
-                        id="collection-available"
-                        checked={fields.deliveryOptions.collection}
-                        onCheckedChange={(checked) =>
-                          setFields((prev) => ({
-                            ...prev,
-                            deliveryOptions: {
-                              ...prev.deliveryOptions,
-                              collection: checked,
-                            },
-                          }))
-                        }
-                        data-oid="yd41s8i"
-                      />
 
-                      <Label htmlFor="collection-available" data-oid="dv:1934">
-                        Collection Available
-                      </Label>
+                    {/* Collection Option */}
+                    <div className="grid gap-3">
+                      <Label htmlFor="collection-option">Collection Option</Label>
+                      <Select
+                        value={fields.deliveryOptions.collection}
+                        onValueChange={handleCollectionChange}
+                      >
+                        <SelectTrigger id="collection-option">
+                          <SelectValue placeholder="Select collection option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="collection-allowed">
+                            Collection Allowed
+                          </SelectItem>
+                          <SelectItem value="no-collection">
+                            No Collection Allowed
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {errors.deliveryOptions && (
+                      <p className="text-sm text-red-500">{errors.deliveryOptions}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-                        <div
-              className="justify-end items-center gap-2 flex flex-row md:hidden"
-              data-oid="dmkb82:"
-            >
-              <Link href="/dashboard/products">
-              <Button variant="outline" size="sm" data-oid="3rhrlyu">
-                Discard
-              </Button>
-              </Link>
-              <Button type="submit" size="sm" data-oid="o1fr59-">
-                Save Product
-              </Button>
-            </div>
-              {/* </div> */}
+
+              <div
+                className="justify-end items-center gap-2 flex flex-row md:hidden"
+                data-oid="dmkb82:"
+              >
+                <Link href="/dashboard/products">
+                  <Button variant="outline" size="sm" data-oid="3rhrlyu">
+                    Discard
+                  </Button>
+                </Link>
+                <Button type="submit" size="sm" data-oid="o1fr59-">
+                  Save Product
+                </Button>
+              </div>
             </div>
           </div>
         </div>

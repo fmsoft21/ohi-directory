@@ -99,7 +99,7 @@ export default function FilterAndSort({ products = [], renderResults }) {
 
   return (
     <div className="mb-6">
-      <div className="flex flex-row items-center gap-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-md mb-4">
+      <div className="flex flex-row items-center gap-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-sm mb-4">
         <Input
           aria-label="Search products"
           value={query}
@@ -109,7 +109,7 @@ export default function FilterAndSort({ products = [], renderResults }) {
         />
 
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="hidden sm:block sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
+          <SelectTrigger className="hidden sm:inline-flex sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50'>
@@ -122,7 +122,7 @@ export default function FilterAndSort({ products = [], renderResults }) {
         </Select>
 
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="hidden sm:block sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
+          <SelectTrigger className="hiddden sm:inline-flex sm:w-1/6 h-9 px-3 py-2 text-sm text-gray-900 border">
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
           <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50'>

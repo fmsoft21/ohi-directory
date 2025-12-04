@@ -107,12 +107,12 @@ export default function Navbar2() {
                       src={profileImage || "/profile.png"}
                       className="h-8 w-8 rounded-full"
                     />
-                    <span className="hidden sm:flex sm:items-center">
+                    {/* <span className="hidden sm:flex sm:items-center">
                       <span aria-hidden="true" className="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-50">
                         {session?.user?.name}
                       </span>
                       <ChevronDownIcon aria-hidden="true" className="ml-2 h-5 w-5 text-gray-800 dark:text-gray-100" />
-                    </span>
+                    </span> */}
                   </MenuButton>
 
                   <MenuItems className="absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-md dark:bg-zinc-900 dark:text-white bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">

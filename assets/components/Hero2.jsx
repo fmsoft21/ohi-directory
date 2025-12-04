@@ -8,7 +8,7 @@ import { useState } from "react";
 export default function HeroSection() {
   return (
     <>
-      <section className="relative w-full pb-10 md:py-14" data-oid="ojxzx24">
+      <section className="relative w-full pb-10 -mt-8 md:py-14" data-oid="ojxzx24">
         <div
           className="absolute top-0 inset-x-0 h-24 flex items-start"
           data-oid="ef2.ell"
@@ -56,8 +56,7 @@ export default function HeroSection() {
             A Central Marketplace <br />for your <br /> Home Business
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo. Elit sunt amet
-            fugiat veniam occaecat fugiat aliqua.
+            Connect with local customers and grow your home business with Ohi! - the all-in-one marketplace designed to connect buyers and sellers.
           </p>
           <div className="mt-10 flex items-center gap-x-6">
             <Button variant='success'

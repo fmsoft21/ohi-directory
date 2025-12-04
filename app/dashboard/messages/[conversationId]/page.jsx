@@ -210,9 +210,9 @@ export default function ConversationPage() {
         }
       `}</style>
       
-      <div className="h-screen w-screen fixed inset-0 sm:static sm:h-[calc(100vh-140px)] sm:w-full flex flex-col bg-white dark:bg-zinc-800 sm:rounded-lg sm:overflow-hidden" style={{ paddingBottom: '3.5rem' }}>
+      <div className="pb-14 sm:pb-0 h-screen w-screen fixed inset-0 sm:static sm:h-[calc(100vh-12rem)] sm:w-full flex flex-col bg-zinc-100 dark:bg-zinc-800 sm:rounded-lg sm:overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex-shrink-0">
+      <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-700 bg-white  dark:bg-zinc-800 flex-shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
