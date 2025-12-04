@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import {
   Select,
   SelectContent,
@@ -13,12 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/hooks/use-toast";
-import { MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { MapPin, Loader2, CheckCircle2, AlertCircle, Upload, X, Camera, Image as ImageIcon } from "lucide-react";
 import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 import { searchAddresses, extractAddressComponents } from "@/utils/addressAutocomplete";
 
 const ProfileDetail = () => {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [loading, setLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [geocoding, setGeocoding] = useState(false);
@@ -26,6 +26,12 @@ const ProfileDetail = () => {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const addressInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+
+  // Image upload states
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const [formData, setFormData] = useState({
     phone: "",
@@ -40,6 +46,8 @@ const ProfileDetail = () => {
     longitude: null,
     geocodedAddress: null,
     geocodedAt: null,
+    image: null,
+    coverImage: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -195,6 +203,114 @@ const ProfileDetail = () => {
     }
   };
 
+  // Handle avatar upload
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Avatar must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+      formDataUpload.append('type', 'avatar');
+
+      const response = await fetch(`/api/users/${session.user.id}/upload-image`, {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData(prev => ({ ...prev, image: data.url }));
+        
+        // Update session to reflect new avatar
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            image: data.url,
+          }
+        });
+
+        toast({
+          title: "Success",
+          description: "Avatar updated successfully",
+        });
+      } else {
+        throw new Error("Failed to upload avatar");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload avatar",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle cover image upload
+  const handleCoverChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Cover image must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('image', file);
+      formDataUpload.append('type', 'cover');
+
+      const response = await fetch(`/api/users/${session.user.id}/upload-image`, {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData(prev => ({ ...prev, coverImage: data.url }));
+        toast({
+          title: "Success",
+          description: "Cover image updated successfully",
+        });
+      } else {
+        throw new Error("Failed to upload cover image");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload cover image",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) {
+        coverInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
@@ -236,22 +352,74 @@ const ProfileDetail = () => {
             </Alert>
           )}
 
+      {/* Cover Image Upload */}
+      <div className="relative w-full h-48 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-2 border-dashed border-zinc-300 dark:border-zinc-600">
+        {formData.coverImage ? (
+          <img
+            src={formData.coverImage}
+            alt="Cover"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-zinc-400">
+            <ImageIcon className="h-12 w-12 mb-2" />
+            <span className="text-sm">Store Cover Image</span>
+          </div>
+        )}
+        <label className="absolute bottom-3 right-3 cursor-pointer">
+          <div className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3">
+            {uploadingCover ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Upload className="h-4 w-4 mr-2" />
+            )}
+            {uploadingCover ? 'Uploading...' : 'Change Cover'}
+          </div>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleCoverChange}
+            className="hidden"
+          />
+        </label>
+      </div>
+
+      {/* Avatar Upload */}
       <div className="flex items-center justify-center mb-8">
         <div className="relative">
-          <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
-            {session?.user?.image ? (
+          <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 dark:border-zinc-600 flex items-center justify-center overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+            {formData.image || session?.user?.image ? (
               <img
-                src={session.user.image}
+                src={formData.image || session?.user?.image}
                 alt="Profile"
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
               <img src="/profile.png" alt="avatar" className="w-24 h-24 rounded-full" />
             )}
+            {uploadingAvatar && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              </div>
+            )}
           </div>
-          <Button variant="outline" size="sm" className="absolute bottom-0 right-0">
-            Change
-          </Button>
+          <label className="absolute bottom-0 right-0 cursor-pointer">
+            <div className="inline-flex items-center justify-center rounded-full p-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+              {uploadingAvatar ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </label>
         </div>
       </div>
 

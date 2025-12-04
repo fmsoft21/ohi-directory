@@ -130,10 +130,11 @@ export default function Navbar2() {
                         </a>
                       )}
                     </MenuItem>
+                    
                     <MenuItem>
                       {({ active }) => (
-                        <a href="/dashboard/products" className={`block px-3 py-1 text-sm leading-6 hover:bg-zinc-50 dark:hover:bg-zinc-800 ${active ? 'bg-zinc-50' : ''}`}>
-                          Products
+                        <a href="/dashboard/messages" className={`block px-3 py-1 text-sm leading-6 hover:bg-zinc-50 dark:hover:bg-zinc-800 ${active ? 'bg-zinc-50' : ''}`}>
+                          Messages
                         </a>
                       )}
                     </MenuItem>

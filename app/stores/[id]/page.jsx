@@ -61,7 +61,7 @@ const StoreDetailPage = () => {
           fill
           className="object-cover"
         />
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-transparent dark:from-zinc-900/90" />
+        <div className="hidden sm:block absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-transparent dark:from-zinc-900/90" />
       </div>
 
       {/* Avatar centered and overlapping the cover */}
@@ -78,23 +78,11 @@ const StoreDetailPage = () => {
           <h1 className="text-3xl md:text-4xl font-bold mt-4">
             {store.storename}
           </h1>
-          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-            {store.city && store.province && (
-              <div className="flex items-center gap-2 text-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>
-                  {store.city}, {store.province}
-                </span>
-              </div>
-            )}
-            {store.phone && (
-              <div className="flex items-center gap-2 text-foreground">
-                <Phone className="h-4 w-4" />
-                <span>{store.phone}</span>
-              </div>
-            )}
-          </div>
-
+          {/* {store.isVerified && (
+            <Badge className="mt-2 bg-emerald-100 text-emerald-800">
+              Verified Seller
+            </Badge>
+          )} */}
           {/* About / Details card below */}
           <div className="w-full md:w-3/4 lg:w-2/3 mt-6">
             <Card>

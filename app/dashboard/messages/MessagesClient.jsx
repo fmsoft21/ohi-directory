@@ -93,7 +93,7 @@ export default function MessagesClient() {
                     <div
                       key={conversation._id}
                       onClick={() => handleSelectConversation(conversation._id)}
-                      className="p-4 rounded-lg bg-white dark:bg-zinc-800 hover:shadow-md dark:hover:shadow-lg transition-all cursor-pointer border border-transparent hover:border-emerald-500 dark:hover:border-emerald-600"
+                      className="p-4 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:shadow-md dark:hover:shadow-lg transition-all cursor-pointer border border-transparent hover:border-emerald-500 dark:hover:border-emerald-600"
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <Avatar>

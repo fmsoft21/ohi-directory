@@ -801,9 +801,11 @@ const AddProductForm = () => {
               className="justify-end items-center gap-2 flex flex-row md:hidden"
               data-oid="dmkb82:"
             >
+              <Link href="/dashboard/products">
               <Button variant="outline" size="sm" data-oid="3rhrlyu">
                 Discard
               </Button>
+              </Link>
               <Button type="submit" size="sm" data-oid="o1fr59-">
                 Save Product
               </Button>

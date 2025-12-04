@@ -1,15 +1,17 @@
 // app/dashboard/messages/[conversationId]/page.jsx
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Trash2, Loader2, MessageSquare, ArrowLeft } from "lucide-react";
+import { Send, Trash2, Loader2, MessageSquare, ArrowLeft, CheckCheck } from "lucide-react";
 import { toast } from "@/components/hooks/use-toast";
 import DashboardShell from "@/assets/components/DashboardShell";
 import Navbar from '@/assets/components/Navbar'
+
+const POLLING_INTERVAL = 5000; // Poll every 5 seconds
 
 export default function ConversationPage() {
   const { data: session } = useSession();
@@ -17,6 +19,7 @@ export default function ConversationPage() {
   const params = useParams();
   const conversationId = params.conversationId;
   const messagesEndRef = useRef(null);
+  const pollingRef = useRef(null);
 
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -24,12 +27,56 @@ export default function ConversationPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
-  // Fetch conversation and messages
+  // Fetch only messages (for polling)
+  const fetchMessages = useCallback(async () => {
+    if (!conversationId) return;
+    
+    try {
+      const res = await fetch(`/api/messages/${conversationId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(prevMessages => {
+          // Only update if there are new messages
+          if (data.length !== prevMessages.length || 
+              (data.length > 0 && data[data.length - 1]._id !== prevMessages[prevMessages.length - 1]?._id)) {
+            return data;
+          }
+          // Check if any read status changed
+          const readStatusChanged = data.some((msg, i) => 
+            prevMessages[i] && msg.read !== prevMessages[i].read
+          );
+          if (readStatusChanged) {
+            return data;
+          }
+          return prevMessages;
+        });
+      }
+    } catch (error) {
+      console.error("Error polling messages:", error);
+    }
+  }, [conversationId]);
+
+  // Fetch conversation and messages (initial load)
   useEffect(() => {
     if (conversationId) {
       fetchConversationAndMessages();
     }
   }, [conversationId]);
+
+  // Set up polling for new messages
+  useEffect(() => {
+    if (!conversationId || loading) return;
+
+    // Start polling
+    pollingRef.current = setInterval(fetchMessages, POLLING_INTERVAL);
+
+    // Cleanup on unmount or when conversation changes
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [conversationId, loading, fetchMessages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -207,7 +254,7 @@ export default function ConversationPage() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-white dark:bg-zinc-800">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+          <div className="flex flex-col items-center justify-center text-center h-full text-muted-foreground">
             <MessageSquare className="h-12 w-12 mb-4" />
             <p>No messages yet. Start the conversation!</p>
           </div>
@@ -227,13 +274,22 @@ export default function ConversationPage() {
                   }`}
                 >
                   <p className="text-sm break-words">{message.content}</p>
-                  <p
-                    className={`text-xs mt-1 ${
+                  <div
+                    className={`flex items-center justify-end gap-1 mt-1 ${
                       isOwn ? "text-emerald-100" : "text-muted-foreground"
                     }`}
                   >
-                    {formatTime(message.createdAt)}
-                  </p>
+                    <span className="text-xs">{formatTime(message.createdAt)}</span>
+                    {isOwn && (
+                      <CheckCheck 
+                        className={`h-4 w-4 ${
+                          message.read 
+                            ? "text-blue-400" 
+                            : "text-white/70"
+                        }`} 
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );
