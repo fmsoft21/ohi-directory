@@ -1,10 +1,22 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import DashboardShell from '@/assets/components/DashboardShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/components/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Wallet,
   TrendingUp,
@@ -28,6 +40,7 @@ import {
   Receipt,
   ExternalLink
 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 // Replace mock data with API calls
 // const { data } = await fetch('/api/wallet');
@@ -125,12 +138,107 @@ const mockPayoutHistory = [
 ];
 
 export default function SellerWalletDashboard() {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('overview');
   const [transactions, setTransactions] = useState(mockTransactions);
   const [walletData, setWalletData] = useState(mockWalletData);
   const [dateFilter, setDateFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionType, setTransactionType] = useState('all');
+  const [bankDetailsOpen, setBankDetailsOpen] = useState(false);
+  const [savingBankDetails, setSavingBankDetails] = useState(false);
+  
+  // Bank details form state
+  const [bankDetails, setBankDetails] = useState({
+    accountHolderName: '',
+    bankName: '',
+    accountNumber: '',
+    accountType: 'savings',
+    branchCode: '',
+  });
+
+  // Fetch user's existing bank details
+  useEffect(() => {
+    const fetchBankDetails = async () => {
+      if (session?.user?.id) {
+        try {
+          const res = await fetch(`/api/users/${session.user.id}`);
+          const data = await res.json();
+          
+          if (data.bankDetails) {
+            setBankDetails(data.bankDetails);
+          }
+        } catch (error) {
+          console.error('Error fetching bank details:', error);
+        }
+      }
+    };
+
+    fetchBankDetails();
+  }, [session?.user?.id]);
+
+  const handleBankDetailsChange = (e) => {
+    const { name, value } = e.target;
+    setBankDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveBankDetails = async () => {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to update bank details.",
+      });
+      return;
+    }
+
+    // Validation
+    if (!bankDetails.accountHolderName || !bankDetails.bankName || 
+        !bankDetails.accountNumber || !bankDetails.branchCode) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+      });
+      return;
+    }
+
+    setSavingBankDetails(true);
+
+    try {
+      const res = await fetch(`/api/users/${session.user.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bankDetails }),
+      });
+
+      if (res.ok) {
+        toast({
+          variant: "success",
+          title: "Success",
+          description: "Bank details updated successfully.",
+        });
+        setBankDetailsOpen(false);
+      } else {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to update bank details');
+      }
+    } catch (error) {
+      console.error('Error updating bank details:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update bank details. Please try again.",
+      });
+    } finally {
+      setSavingBankDetails(false);
+    }
+  };
 
   // Calculate stats
   const completedTransactions = transactions.filter(t => t.status === 'completed' && t.type === 'sale');
@@ -193,6 +301,7 @@ export default function SellerWalletDashboard() {
   };
 
   return (
+    <DashboardShell>
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -441,10 +550,97 @@ export default function SellerWalletDashboard() {
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
                     <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start">
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Update Bank Details
-                      </Button>
+                      <Dialog open={bankDetailsOpen} onOpenChange={setBankDetailsOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Update Bank Details
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md rounded-lg">
+                          <DialogHeader>
+                            <DialogTitle>Update Bank Details</DialogTitle>
+                            <DialogDescription>
+                              Update your banking information for payouts. All fields are required.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="accountHolderName">Account Holder Name *</Label>
+                              <Input
+                                id="accountHolderName"
+                                name="accountHolderName"
+                                value={bankDetails.accountHolderName}
+                                onChange={handleBankDetailsChange}
+                                placeholder="John Doe"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="bankName">Bank Name *</Label>
+                              <Input
+                                id="bankName"
+                                name="bankName"
+                                value={bankDetails.bankName}
+                                onChange={handleBankDetailsChange}
+                                placeholder="FNB, Standard Bank, etc."
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="accountType">Account Type *</Label>
+                              <select
+                                id="accountType"
+                                name="accountType"
+                                value={bankDetails.accountType}
+                                onChange={handleBankDetailsChange}
+                                className="w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
+                              >
+                                <option value="savings">Savings</option>
+                                <option value="current">Current/Cheque</option>
+                                <option value="transmission">Transmission</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="accountNumber">Account Number *</Label>
+                              <Input
+                                id="accountNumber"
+                                name="accountNumber"
+                                value={bankDetails.accountNumber}
+                                onChange={handleBankDetailsChange}
+                                placeholder="1234567890"
+                                type="text"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="branchCode">Branch Code *</Label>
+                              <Input
+                                id="branchCode"
+                                name="branchCode"
+                                value={bankDetails.branchCode}
+                                onChange={handleBankDetailsChange}
+                                placeholder="250655"
+                                type="text"
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setBankDetailsOpen(false)}
+                              disabled={savingBankDetails}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={handleSaveBankDetails}
+                              disabled={savingBankDetails}
+                            >
+                              {savingBankDetails ? 'Saving...' : 'Save Details'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                       <Button variant="outline" className="w-full justify-start">
                         <Download className="h-4 w-4 mr-2" />
                         Download Statement
@@ -611,5 +807,6 @@ export default function SellerWalletDashboard() {
         </Card>
       </div>
     </div>
+    </DashboardShell>
   );
 }

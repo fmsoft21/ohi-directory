@@ -145,7 +145,10 @@ const AddProductForm = () => {
 
   // Handler for input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    
+    // Convert to number for numeric inputs
+    const finalValue = type === 'number' ? parseFloat(value) || 0 : value;
 
     if (name.includes(".")) {
       const [outerKey, innerKey] = name.split(".");
@@ -153,13 +156,13 @@ const AddProductForm = () => {
         ...prevFields,
         [outerKey]: {
           ...prevFields[outerKey],
-          [innerKey]: value,
+          [innerKey]: finalValue,
         },
       }));
     } else {
       setFields((prevFields) => ({
         ...prevFields,
-        [name]: value,
+        [name]: finalValue,
       }));
     }
     if (errors[name]) {
@@ -301,9 +304,11 @@ const AddProductForm = () => {
       return;
     }
 
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = "Uploading...";
+    const submitButtons = e.target.querySelectorAll('button[type="submit"]');
+    submitButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.textContent = "Uploading...";
+    });
 
     try {
       const formData = new FormData();
@@ -344,9 +349,10 @@ const AddProductForm = () => {
         body: formData,
       });
 
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else if (!response.ok) {
+      if (response.ok) {
+        // Successfully created product - redirect to products page
+        window.location.href = "/dashboard/products";
+      } else {
         const error = await response.json();
         throw new Error(error.message || "Upload failed");
       }
@@ -354,8 +360,11 @@ const AddProductForm = () => {
       console.error("Error:", error);
       alert("Upload failed: " + error.message);
     } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = "Submit Product";
+      const submitButtons = document.querySelectorAll('button[type="submit"]');
+      submitButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.textContent = "Save Product";
+      });
     }
   };
 
@@ -384,6 +393,7 @@ const AddProductForm = () => {
         >
           {/* Header section */}
           <div className="flex items-center gap-4" data-oid="2yq568f">
+            <Link href='/dashboard/products'>
             <Button
               variant="outline"
               size="icon"
@@ -395,6 +405,7 @@ const AddProductForm = () => {
                 Back
               </span>
             </Button>
+            </Link>
             <h1
               className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0"
               data-oid="z4.lna5"
@@ -412,9 +423,11 @@ const AddProductForm = () => {
               className="hidden items-center gap-2 md:ml-auto md:flex"
               data-oid="dmkb82:"
             >
-              <Button variant="outline" size="sm" data-oid="3rhrlyu">
+              <Link href='/dashboard/products'>
+              <Button type='button' variant="outline" size="sm" data-oid="3rhrlyu">
                 Discard
               </Button>
+              </Link>
               <Button type="submit" size="sm" data-oid="o1fr59-">
                 Save Product
               </Button>
@@ -959,11 +972,11 @@ const AddProductForm = () => {
               </Card>
 
               <div
-                className="justify-end items-center gap-2 flex flex-row md:hidden"
+                className="justify-end items-center gap-2 flex flex-row sm:hidden"
                 data-oid="dmkb82:"
               >
                 <Link href="/dashboard/products">
-                  <Button variant="outline" size="sm" data-oid="3rhrlyu">
+                  <Button type="button" variant="outline" size="sm" data-oid="3rhrlyu">
                     Discard
                   </Button>
                 </Link>

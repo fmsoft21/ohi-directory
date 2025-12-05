@@ -143,7 +143,7 @@ const ReviewTab = ({ product }) => {
       <div className="space-y-8" data-oid="-880yzf">
         {session?.user ? (
           <div
-            className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg"
+            className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-lg"
             data-oid="kx8n_jw"
           >
             <h4 className="text-lg font-semibold mb-4" data-oid="e4ptzc4">
@@ -187,7 +187,7 @@ const ReviewTab = ({ product }) => {
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   required
-                  className="w-full p-4 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  className="w-full p-4 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-zinc-800"
                   placeholder="Share your experience with this product..."
                   rows={4}
                   data-oid="z:2p:bj"
@@ -206,7 +206,7 @@ const ReviewTab = ({ product }) => {
           </div>
         ) : (
           <div
-            className="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+            className="text-center py-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg"
             data-oid="0qu15n."
           >
             <p className="mb-4" data-oid="-d0-.lu">

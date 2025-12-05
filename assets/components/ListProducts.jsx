@@ -215,7 +215,7 @@ const ProductsTable = () => {
                             <X className="h-4 w-4" data-oid="8_9lp:x" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent data-oid="7wc_k.6">
+                        <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg rounded-lg" data-oid="7wc_k.6">
                           <AlertDialogHeader data-oid="10a04qt">
                             <AlertDialogTitle data-oid="jgnj8ay">Are you absolutely sure?</AlertDialogTitle>
                             <AlertDialogDescription data-oid="y_4pfht">
@@ -224,9 +224,7 @@ const ProductsTable = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter data-oid="k4qa_4p">
                             <AlertDialogCancel data-oid="j_-kb5x">Cancel</AlertDialogCancel>
-                            <AlertDialogAction data-oid="_qd75uc">
-                              <Button onClick={() => handleDeleteProduct(product._id)} data-oid="4ce:oce">Continue</Button>
-                            </AlertDialogAction>
+                            <AlertDialogAction className='border border-red-500 text-red-500 hover:border-red-600 hover:text-red-600' onClick={() => handleDeleteProduct(product._id)}>Continue                           </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

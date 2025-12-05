@@ -122,7 +122,7 @@ export default function FilterAndSort({ products = [], renderResults }) {
         </Select>
 
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="hiddden sm:inline-flex sm:w-1/6 h-9 px-3 py-2 text-sm text-gray-900 border">
+          <SelectTrigger className="hidden sm:inline-flex sm:w-1/6 h-9 px-3 py-2 text-sm text-gray-900 border">
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
           <SelectContent className='backdrop-blur-md bg-white/50 text-zinc-900 dark:text-white dark:bg-black/50'>

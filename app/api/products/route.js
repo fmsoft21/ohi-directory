@@ -93,7 +93,14 @@ export const POST = async (request) => {
     const newProduct = new Product(productData);
     await newProduct.save();
 
-    return Response.redirect(`${process.env.NEXTAUTH_URL}/dashboard/products`);
+    return new Response(JSON.stringify({ 
+      success: true,
+      productId: newProduct._id,
+      message: 'Product created successfully'
+    }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.error('Error creating product:', error);
     return new Response(JSON.stringify({ 

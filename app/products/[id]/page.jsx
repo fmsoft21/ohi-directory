@@ -147,7 +147,7 @@ const { addToCart } = useCart();
   return (
     <>
       <section className="">
-        <div className="max-w-7xl mx-auto px-4 py-24 md:pt-32 md:pb-16">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 sm:py-24 sm:pt-32 sm:pb-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Main image (driven by selectedImage) */}
             <div
@@ -327,13 +327,14 @@ const { addToCart } = useCart();
           </div>
         </div>
       </section>
+
       {/* <div className='bg-white dark:bg-background'> */}
       <main
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         data-oid="3gz_hy7"
       >
         {/* Tabs section */}
-        <div className="" data-oid="1x3ep:4">
+        <div className="pt-8 pb-16" data-oid="1x3ep:4">
           <Tabs
             defaultValue="description"
             className="w-full"
@@ -360,9 +361,9 @@ const { addToCart } = useCart();
               className="mt-6"
               data-oid="1y3ul-t"
             >
-              <div className="space-y-4" data-oid="4p03e.c">
+              <div className="space-y-6" data-oid="4p03e.c">
                 <h3
-                  className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100"
+                  className="font-semibold mb-2 text-gray-900 dark:text-gray-100"
                   data-oid="kr6m57h"
                 >
                   Product Details
@@ -376,15 +377,15 @@ const { addToCart } = useCart();
 
                 <div className="grid grid-cols-2 gap-4 mt-4" data-oid="bc-:wde">
                   <div data-oid="xi92n9g">
-                    <h4 className="font-medium" data-oid="8ta5dwb">
+                    <h4 className="text-sm text-zinc-400" data-oid="8ta5dwb">
                       Store Name
                     </h4>
-                    <p data-oid="k.xnry-">
+                    <p >
                       {product?.ownerName || "Ohi! Store"}
                     </p>
                   </div>
                   <div data-oid="v3.m44n">
-                    <h4 className="font-medium" data-oid="uy1m6ti">
+                    <h4 className="text-sm text-zinc-400" data-oid="uy1m6ti">
                       Category
                     </h4>
                     <p data-oid="hfkre8n">
@@ -392,7 +393,7 @@ const { addToCart } = useCart();
                     </p>
                   </div>
                   <div data-oid="i:7x.8b">
-                    <h4 className="font-medium" data-oid="n5kv_aj">
+                    <h4 className="text-sm text-zinc-400" data-oid="n5kv_aj">
                       Warranty
                     </h4>
                     <p data-oid="x-hwvav">
@@ -400,7 +401,7 @@ const { addToCart } = useCart();
                     </p>
                   </div>
                   <div data-oid="l4b:r-8">
-                    <h4 className="font-medium" data-oid="o34ye0t">
+                    <h4 className="text-sm text-zinc-400" data-oid="o34ye0t">
                       Shipping From
                     </h4>
                     <p data-oid="d:gfo4o">
@@ -410,18 +411,20 @@ const { addToCart } = useCart();
                 </div>
 
                 {/* Delivery Options */}
-                {(product.deliveryOptions?.delivery ||
-                  product.deliveryOptions?.collection) && (
+                {(product.deliveryOptions?.methods?.length > 0 ||
+                  product.deliveryOptions?.collection === 'collection-allowed') && (
                   <div className="space-y-2">
                     <h3 className="font-semibold">Delivery Options:</h3>
                     <ul className="space-y-1">
-                      {product.deliveryOptions.delivery && (
-                        <li className="flex items-center gap-2">
+                      {product.deliveryOptions.methods?.map((method) => (
+                        <li key={method} className="flex items-center gap-2">
                           <span className="text-emerald-500">✓</span>
-                          Delivery Available
+                          {method === 'pudo' && 'PUDO (Locker to Locker)'}
+                          {method === 'door-to-door' && 'Door to Door'}
+                          {method === 'pargo' && 'Pargo'}
                         </li>
-                      )}
-                      {product.deliveryOptions.collection && (
+                      ))}
+                      {product.deliveryOptions.collection === 'collection-allowed' && (
                         <li className="flex items-center gap-2">
                           <span className="text-emerald-500">✓</span>
                           Collection Available

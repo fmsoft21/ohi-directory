@@ -177,6 +177,31 @@ const UserSchema = new Schema(
         'manage_couriers'
       ],
     }],
+    
+    // Bank details for payouts
+    bankDetails: {
+      accountHolderName: {
+        type: String,
+        default: '',
+      },
+      bankName: {
+        type: String,
+        default: '',
+      },
+      accountNumber: {
+        type: String,
+        default: '',
+      },
+      accountType: {
+        type: String,
+        enum: ['savings', 'current', 'transmission', ''],
+        default: 'savings',
+      },
+      branchCode: {
+        type: String,
+        default: '',
+      },
+    },
   },
   {
     timestamps: true,
