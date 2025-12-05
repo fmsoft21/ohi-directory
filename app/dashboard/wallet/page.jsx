@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardShell from '@/assets/components/DashboardShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,144 +38,173 @@ import {
   BarChart3,
   PieChart,
   Receipt,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-
-// Replace mock data with API calls
-// const { data } = await fetch('/api/wallet');
-
-const mockWalletData = {
-  balance: 45250.75,
-  pendingBalance: 8420.50,
-  totalEarnings: 127500.00,
-  thisMonthEarnings: 12350.00,
-  lastMonthEarnings: 10200.00,
-  currency: 'ZAR'
-};
-
-const mockTransactions = [
-  {
-    id: '1',
-    type: 'sale',
-    orderNumber: 'ORD-241125-0123',
-    description: 'Product Sale - Wireless Headphones',
-    amount: 1299.00,
-    fee: 64.95,
-    net: 1234.05,
-    status: 'completed',
-    date: '2024-11-25T10:30:00',
-    buyer: 'John Doe',
-    paymentMethod: 'payfast'
-  },
-  {
-    id: '2',
-    type: 'sale',
-    orderNumber: 'ORD-241124-0456',
-    description: 'Product Sale - Laptop Stand',
-    amount: 450.00,
-    fee: 22.50,
-    net: 427.50,
-    status: 'completed',
-    date: '2024-11-24T15:45:00',
-    buyer: 'Jane Smith',
-    paymentMethod: 'eft'
-  },
-  {
-    id: '3',
-    type: 'payout',
-    description: 'Weekly Payout',
-    amount: -5000.00,
-    status: 'processing',
-    date: '2024-11-23T09:00:00',
-    payoutMethod: 'bank_transfer',
-    referenceNumber: 'PO-241123-001'
-  },
-  {
-    id: '4',
-    type: 'refund',
-    orderNumber: 'ORD-241120-0789',
-    description: 'Refund - Damaged Item',
-    amount: -899.00,
-    status: 'completed',
-    date: '2024-11-20T14:20:00',
-    buyer: 'Mike Johnson'
-  },
-  {
-    id: '5',
-    type: 'sale',
-    orderNumber: 'ORD-241119-0234',
-    description: 'Product Sale - Smart Watch',
-    amount: 2500.00,
-    fee: 125.00,
-    net: 2375.00,
-    status: 'pending',
-    date: '2024-11-19T11:15:00',
-    buyer: 'Sarah Williams',
-    paymentMethod: 'payfast'
-  }
-];
-
-const mockPayoutHistory = [
-  {
-    id: '1',
-    amount: 15000.00,
-    status: 'completed',
-    date: '2024-11-18T09:00:00',
-    method: 'bank_transfer',
-    reference: 'PO-241118-001',
-    bankAccount: '****1234'
-  },
-  {
-    id: '2',
-    amount: 12500.00,
-    status: 'completed',
-    date: '2024-11-11T09:00:00',
-    method: 'bank_transfer',
-    reference: 'PO-241111-001',
-    bankAccount: '****1234'
-  }
-];
 
 export default function SellerWalletDashboard() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('overview');
-  const [transactions, setTransactions] = useState(mockTransactions);
-  const [walletData, setWalletData] = useState(mockWalletData);
+  const [transactions, setTransactions] = useState([]);
+  const [walletData, setWalletData] = useState({
+    balance: 0,
+    pendingBalance: 0,
+    totalEarnings: 0,
+    thisMonthEarnings: 0,
+    lastMonthEarnings: 0,
+    currency: 'ZAR'
+  });
+  const [payoutHistory, setPayoutHistory] = useState([]);
   const [dateFilter, setDateFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionType, setTransactionType] = useState('all');
   const [bankDetailsOpen, setBankDetailsOpen] = useState(false);
   const [savingBankDetails, setSavingBankDetails] = useState(false);
+  const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState('');
+  const [requestingPayout, setRequestingPayout] = useState(false);
+  
+  // Loading states
+  const [loadingWallet, setLoadingWallet] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
+  const [loadingPayouts, setLoadingPayouts] = useState(true);
   
   // Bank details form state
   const [bankDetails, setBankDetails] = useState({
-    accountHolderName: '',
+    accountHolder: '',
     bankName: '',
     accountNumber: '',
     accountType: 'savings',
     branchCode: '',
   });
 
-  // Fetch user's existing bank details
-  useEffect(() => {
-    const fetchBankDetails = async () => {
-      if (session?.user?.id) {
-        try {
-          const res = await fetch(`/api/users/${session.user.id}`);
-          const data = await res.json();
-          
-          if (data.bankDetails) {
-            setBankDetails(data.bankDetails);
-          }
-        } catch (error) {
-          console.error('Error fetching bank details:', error);
-        }
+  // Fetch wallet data
+  const fetchWalletData = useCallback(async () => {
+    try {
+      setLoadingWallet(true);
+      const res = await fetch('/api/wallet');
+      if (!res.ok) throw new Error('Failed to fetch wallet data');
+      const data = await res.json();
+      
+      setWalletData({
+        balance: data.balance || 0,
+        pendingBalance: data.pendingBalance || 0,
+        totalEarnings: data.totalEarnings || 0,
+        thisMonthEarnings: data.stats?.thisMonth?.earnings || 0,
+        lastMonthEarnings: data.stats?.lastMonth?.earnings || 0,
+        currency: data.currency || 'ZAR'
+      });
+      
+      // Set bank details from wallet if available
+      if (data.bankDetails) {
+        setBankDetails({
+          accountHolder: data.bankDetails.accountHolder || '',
+          bankName: data.bankDetails.bankName || '',
+          accountNumber: data.bankDetails.accountNumber || '',
+          accountType: data.bankDetails.accountType || 'savings',
+          branchCode: data.bankDetails.branchCode || '',
+        });
       }
-    };
+      
+      // Set transactions from wallet response
+      if (data.transactions) {
+        setTransactions(data.transactions.map(t => ({
+          id: t._id,
+          type: t.type,
+          orderNumber: t.orderNumber,
+          description: t.description,
+          amount: t.amount,
+          fee: t.fee,
+          net: t.net,
+          status: t.status,
+          date: t.createdAt,
+          buyer: t.buyerName,
+          paymentMethod: t.paymentMethod
+        })));
+        setLoadingTransactions(false);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load wallet data.",
+      });
+    } finally {
+      setLoadingWallet(false);
+    }
+  }, []);
 
-    fetchBankDetails();
-  }, [session?.user?.id]);
+  // Fetch transactions with filters
+  const fetchTransactions = useCallback(async () => {
+    try {
+      setLoadingTransactions(true);
+      const params = new URLSearchParams();
+      if (transactionType !== 'all') params.append('type', transactionType);
+      
+      const res = await fetch(`/api/wallet/transactions?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      const data = await res.json();
+      
+      setTransactions((data.transactions || []).map(t => ({
+        id: t._id,
+        type: t.type,
+        orderNumber: t.orderNumber,
+        description: t.description,
+        amount: t.amount,
+        fee: t.fee,
+        net: t.net,
+        status: t.status,
+        date: t.createdAt,
+        buyer: t.buyerName,
+        paymentMethod: t.paymentMethod
+      })));
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }, [transactionType]);
+
+  // Fetch payout history
+  const fetchPayoutHistory = useCallback(async () => {
+    try {
+      setLoadingPayouts(true);
+      const res = await fetch('/api/wallet/payout/history');
+      if (!res.ok) throw new Error('Failed to fetch payout history');
+      const data = await res.json();
+      
+      setPayoutHistory((data.payouts || []).map(p => ({
+        id: p._id,
+        amount: p.amount,
+        status: p.status,
+        date: p.createdAt,
+        method: p.method,
+        reference: p.referenceNumber,
+        bankAccount: p.bankDetails?.accountNumber ? `****${p.bankDetails.accountNumber.slice(-4)}` : '****'
+      })));
+    } catch (error) {
+      console.error('Error fetching payout history:', error);
+    } finally {
+      setLoadingPayouts(false);
+    }
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    if (session?.user) {
+      fetchWalletData();
+      fetchPayoutHistory();
+    }
+  }, [session?.user, fetchWalletData, fetchPayoutHistory]);
+
+  // Fetch transactions when type filter changes
+  useEffect(() => {
+    if (session?.user && activeTab === 'transactions') {
+      fetchTransactions();
+    }
+  }, [session?.user, activeTab, transactionType, fetchTransactions]);
 
   const handleBankDetailsChange = (e) => {
     const { name, value } = e.target;
@@ -196,7 +225,7 @@ export default function SellerWalletDashboard() {
     }
 
     // Validation
-    if (!bankDetails.accountHolderName || !bankDetails.bankName || 
+    if (!bankDetails.accountHolder || !bankDetails.bankName || 
         !bankDetails.accountNumber || !bankDetails.branchCode) {
       toast({
         variant: "destructive",
@@ -209,12 +238,12 @@ export default function SellerWalletDashboard() {
     setSavingBankDetails(true);
 
     try {
-      const res = await fetch(`/api/users/${session.user.id}`, {
-        method: 'PATCH',
+      const res = await fetch('/api/wallet/bank-details', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bankDetails }),
+        body: JSON.stringify(bankDetails),
       });
 
       if (res.ok) {
@@ -224,6 +253,8 @@ export default function SellerWalletDashboard() {
           description: "Bank details updated successfully.",
         });
         setBankDetailsOpen(false);
+        // Refresh wallet data to get updated bank details
+        fetchWalletData();
       } else {
         const error = await res.json();
         throw new Error(error.message || 'Failed to update bank details');
@@ -237,6 +268,76 @@ export default function SellerWalletDashboard() {
       });
     } finally {
       setSavingBankDetails(false);
+    }
+  };
+
+  // Handle payout request
+  const handlePayoutRequest = async () => {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to request a payout.",
+      });
+      return;
+    }
+
+    const amount = payoutAmount ? parseFloat(payoutAmount) : walletData.balance;
+    
+    if (amount < 500) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Minimum payout amount is R 500.00.",
+      });
+      return;
+    }
+
+    if (amount > walletData.balance) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Payout amount exceeds available balance.",
+      });
+      return;
+    }
+
+    setRequestingPayout(true);
+
+    try {
+      const res = await fetch('/api/wallet/payout/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast({
+          variant: "success",
+          title: "Success",
+          description: `Payout request submitted successfully. Reference: ${data.payout?.referenceNumber}`,
+        });
+        setPayoutDialogOpen(false);
+        setPayoutAmount('');
+        // Refresh wallet data and payout history
+        fetchWalletData();
+        fetchPayoutHistory();
+      } else {
+        throw new Error(data.error || 'Failed to request payout');
+      }
+    } catch (error) {
+      console.error('Error requesting payout:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to request payout. Please try again.",
+      });
+    } finally {
+      setRequestingPayout(false);
     }
   };
 
@@ -320,13 +421,76 @@ export default function SellerWalletDashboard() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Request Payout
-            </Button>
+            <Dialog open={payoutDialogOpen} onOpenChange={setPayoutDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Request Payout
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md rounded-lg">
+                <DialogHeader>
+                  <DialogTitle>Request Payout</DialogTitle>
+                  <DialogDescription>
+                    Request a payout to your bank account. Minimum amount is R 500.00.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Available Balance</p>
+                    <p className="text-2xl font-bold text-emerald-600">{formatCurrency(walletData.balance)}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="payoutAmount">Payout Amount (leave empty for full balance)</Label>
+                    <Input
+                      id="payoutAmount"
+                      type="number"
+                      placeholder={`Max: ${formatCurrency(walletData.balance)}`}
+                      value={payoutAmount}
+                      onChange={(e) => setPayoutAmount(e.target.value)}
+                      min={500}
+                      max={walletData.balance}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPayoutDialogOpen(false)}
+                    disabled={requestingPayout}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handlePayoutRequest}
+                    disabled={requestingPayout || walletData.balance < 500}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {requestingPayout ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Request Payout'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
+        {/* Loading State */}
+        {loadingWallet ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            <span className="ml-2 text-muted-foreground">Loading wallet data...</span>
+          </div>
+        ) : (
+          <>
         {/* Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-emerald-600">
@@ -508,40 +672,52 @@ export default function SellerWalletDashboard() {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                  <div className="space-y-3">
-                    {transactions.slice(0, 5).map((transaction) => (
-                      <div
-                        key={transaction.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            transaction.type === 'sale' ? 'bg-green-100 dark:bg-green-900/30' :
-                            transaction.type === 'refund' ? 'bg-red-100 dark:bg-red-900/30' :
-                            'bg-blue-100 dark:bg-blue-900/30'
-                          }`}>
-                            {getTransactionIcon(transaction.type)}
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-muted-foreground">Loading activity...</span>
+                    </div>
+                  ) : transactions.length > 0 ? (
+                    <div className="space-y-3">
+                      {transactions.slice(0, 5).map((transaction) => (
+                        <div
+                          key={transaction.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              transaction.type === 'sale' ? 'bg-green-100 dark:bg-green-900/30' :
+                              transaction.type === 'refund' ? 'bg-red-100 dark:bg-red-900/30' :
+                              'bg-blue-100 dark:bg-blue-900/30'
+                            }`}>
+                              {getTransactionIcon(transaction.type)}
+                            </div>
+                            <div>
+                              <p className="font-medium">{transaction.description}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {transaction.orderNumber && `${transaction.orderNumber} • `}{formatDate(transaction.date)}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{transaction.description}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {transaction.orderNumber} • {formatDate(transaction.date)}
+                          <div className="text-right">
+                            <p className={`font-semibold ${
+                              transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
                             </p>
+                            <Badge className={getStatusColor(transaction.status)}>
+                              {transaction.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-semibold ${
-                            transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
-                          </p>
-                          <Badge className={getStatusColor(transaction.status)}>
-                            {transaction.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Receipt className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <p className="text-muted-foreground">No recent activity</p>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -566,11 +742,11 @@ export default function SellerWalletDashboard() {
                           </DialogHeader>
                           <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                              <Label htmlFor="accountHolderName">Account Holder Name *</Label>
+                              <Label htmlFor="accountHolder">Account Holder Name *</Label>
                               <Input
-                                id="accountHolderName"
-                                name="accountHolderName"
-                                value={bankDetails.accountHolderName}
+                                id="accountHolder"
+                                name="accountHolder"
+                                value={bankDetails.accountHolder}
                                 onChange={handleBankDetailsChange}
                                 placeholder="John Doe"
                               />
@@ -595,7 +771,7 @@ export default function SellerWalletDashboard() {
                                 className="w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
                               >
                                 <option value="savings">Savings</option>
-                                <option value="current">Current/Cheque</option>
+                                <option value="cheque">Cheque/Current</option>
                                 <option value="transmission">Transmission</option>
                               </select>
                             </div>
@@ -636,7 +812,14 @@ export default function SellerWalletDashboard() {
                               onClick={handleSaveBankDetails}
                               disabled={savingBankDetails}
                             >
-                              {savingBankDetails ? 'Saving...' : 'Save Details'}
+                              {savingBankDetails ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                'Save Details'
+                              )}
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -675,7 +858,12 @@ export default function SellerWalletDashboard() {
 
             {activeTab === 'transactions' && (
               <div className="space-y-3">
-                {filteredTransactions.length > 0 ? (
+                {loadingTransactions ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading transactions...</span>
+                  </div>
+                ) : filteredTransactions.length > 0 ? (
                   filteredTransactions.map((transaction) => (
                     <div
                       key={transaction.id}
@@ -716,12 +904,12 @@ export default function SellerWalletDashboard() {
                           }`}>
                             {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
                           </p>
-                          {transaction.fee && (
+                          {transaction.fee > 0 && (
                             <p className="text-xs text-muted-foreground">
                               Fee: -{formatCurrency(transaction.fee)}
                             </p>
                           )}
-                          {transaction.net && (
+                          {transaction.net > 0 && (
                             <p className="text-xs font-medium">
                               Net: {formatCurrency(transaction.net)}
                             </p>
@@ -758,7 +946,11 @@ export default function SellerWalletDashboard() {
                         Minimum payout: R 500.00
                       </p>
                     </div>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700">
+                    <Button 
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => setPayoutDialogOpen(true)}
+                      disabled={walletData.balance < 500}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Request
                     </Button>
@@ -769,42 +961,56 @@ export default function SellerWalletDashboard() {
 
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Payout History</h3>
-                  <div className="space-y-3">
-                    {mockPayoutHistory.map((payout) => (
-                      <div
-                        key={payout.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                            <CreditCard className="h-5 w-5 text-blue-600" />
+                  {loadingPayouts ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-muted-foreground">Loading payouts...</span>
+                    </div>
+                  ) : payoutHistory.length > 0 ? (
+                    <div className="space-y-3">
+                      {payoutHistory.map((payout) => (
+                        <div
+                          key={payout.id}
+                          className="flex items-center justify-between p-4 border rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                              <CreditCard className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Bank Transfer</p>
+                              <p className="text-sm text-muted-foreground">
+                                {payout.reference} • {payout.bankAccount}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatDate(payout.date)}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">Bank Transfer</p>
-                            <p className="text-sm text-muted-foreground">
-                              {payout.reference} • {payout.bankAccount}
+                          <div className="text-right">
+                            <p className="font-semibold text-blue-600">
+                              {formatCurrency(payout.amount)}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDate(payout.date)}
-                            </p>
+                            <Badge className={getStatusColor(payout.status)}>
+                              {payout.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-blue-600">
-                            {formatCurrency(payout.amount)}
-                          </p>
-                          <Badge className={getStatusColor(payout.status)}>
-                            {payout.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <CreditCard className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <p className="text-muted-foreground">No payout history yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
+        </>
+        )}
       </div>
     </div>
     </DashboardShell>
