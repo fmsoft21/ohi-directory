@@ -43,6 +43,10 @@ import {
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
+// Constants
+const MINIMUM_PAYOUT = 500;
+const ACCOUNT_MASK_LENGTH = 4;
+
 export default function SellerWalletDashboard() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('overview');
@@ -109,8 +113,8 @@ export default function SellerWalletDashboard() {
       
       // Set transactions from wallet response
       if (data.transactions) {
-        setTransactions(data.transactions.map(t => ({
-          id: t._id,
+        setTransactions(data.transactions.map((t, index) => ({
+          id: t._id || `tx-${index}`,
           type: t.type,
           orderNumber: t.orderNumber,
           description: t.description,
@@ -147,8 +151,8 @@ export default function SellerWalletDashboard() {
       if (!res.ok) throw new Error('Failed to fetch transactions');
       const data = await res.json();
       
-      setTransactions((data.transactions || []).map(t => ({
-        id: t._id,
+      setTransactions((data.transactions || []).map((t, index) => ({
+        id: t._id || `tx-${index}`,
         type: t.type,
         orderNumber: t.orderNumber,
         description: t.description,
@@ -175,14 +179,16 @@ export default function SellerWalletDashboard() {
       if (!res.ok) throw new Error('Failed to fetch payout history');
       const data = await res.json();
       
-      setPayoutHistory((data.payouts || []).map(p => ({
-        id: p._id,
+      setPayoutHistory((data.payouts || []).map((p, index) => ({
+        id: p._id || `payout-${index}`,
         amount: p.amount,
         status: p.status,
         date: p.createdAt,
         method: p.method,
         reference: p.referenceNumber,
-        bankAccount: p.bankDetails?.accountNumber ? `****${p.bankDetails.accountNumber.slice(-4)}` : '****'
+        bankAccount: p.bankDetails?.accountNumber 
+          ? `****${p.bankDetails.accountNumber.slice(-ACCOUNT_MASK_LENGTH)}` 
+          : '****'
       })));
     } catch (error) {
       console.error('Error fetching payout history:', error);
@@ -248,7 +254,6 @@ export default function SellerWalletDashboard() {
 
       if (res.ok) {
         toast({
-          variant: "success",
           title: "Success",
           description: "Bank details updated successfully.",
         });
@@ -284,11 +289,11 @@ export default function SellerWalletDashboard() {
 
     const amount = payoutAmount ? parseFloat(payoutAmount) : walletData.balance;
     
-    if (amount < 500) {
+    if (amount < MINIMUM_PAYOUT) {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Minimum payout amount is R 500.00.",
+        description: `Minimum payout amount is R ${MINIMUM_PAYOUT.toFixed(2)}.`,
       });
       return;
     }
@@ -317,7 +322,6 @@ export default function SellerWalletDashboard() {
 
       if (res.ok) {
         toast({
-          variant: "success",
           title: "Success",
           description: `Payout request submitted successfully. Reference: ${data.payout?.referenceNumber}`,
         });
@@ -432,7 +436,7 @@ export default function SellerWalletDashboard() {
                 <DialogHeader>
                   <DialogTitle>Request Payout</DialogTitle>
                   <DialogDescription>
-                    Request a payout to your bank account. Minimum amount is R 500.00.
+                    Request a payout to your bank account. Minimum amount is R {MINIMUM_PAYOUT.toFixed(2)}.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -448,7 +452,7 @@ export default function SellerWalletDashboard() {
                       placeholder={`Max: ${formatCurrency(walletData.balance)}`}
                       value={payoutAmount}
                       onChange={(e) => setPayoutAmount(e.target.value)}
-                      min={500}
+                      min={MINIMUM_PAYOUT}
                       max={walletData.balance}
                     />
                   </div>
@@ -465,7 +469,7 @@ export default function SellerWalletDashboard() {
                   <Button
                     type="button"
                     onClick={handlePayoutRequest}
-                    disabled={requestingPayout || walletData.balance < 500}
+                    disabled={requestingPayout || walletData.balance < MINIMUM_PAYOUT}
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
                     {requestingPayout ? (
@@ -943,13 +947,13 @@ export default function SellerWalletDashboard() {
                         Available balance: {formatCurrency(walletData.balance)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Minimum payout: R 500.00
+                        Minimum payout: R {MINIMUM_PAYOUT.toFixed(2)}
                       </p>
                     </div>
                     <Button 
                       className="bg-emerald-600 hover:bg-emerald-700"
                       onClick={() => setPayoutDialogOpen(true)}
-                      disabled={walletData.balance < 500}
+                      disabled={walletData.balance < MINIMUM_PAYOUT}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Request
