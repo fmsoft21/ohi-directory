@@ -1,12 +1,7 @@
 // app/layout.jsx - Updated with MessagesProvider
 import React from "react";
 import Head from "next/head";
-import {
-  Inter,
-  Manrope,
-  Zalando_Sans_SemiExpanded,
-  Raleway,
-} from "next/font/google";
+import localFont from "next/font/local";
 import "@/assets/styles/globals.css";
 import Footer from "@/assets/components/Footer";
 import Providers from "@/assets/components/Providers";
@@ -15,7 +10,11 @@ import Navbar from "@/assets/components/Navbar";
 import DisableZoom from "@/app/DisableZoom";
 import MobileLayoutWrapper from "@/assets/components/MobileLayoutWrapper";
 
-const font = Zalando_Sans_SemiExpanded({ subsets: ["latin"], weight: "400", display: "swap", variable: "--font-zalando" });
+const font = localFont({
+  src: "../public/Zalando.ttf",
+  display: "swap",
+  variable: "--font-zalando",
+});
 
 export const metadata = {
   title: "Ohi! | Pitch. Persuade. Procure",

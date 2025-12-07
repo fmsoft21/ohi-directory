@@ -88,6 +88,11 @@ const ProductSchema = new Schema(
         default: 0,
       },
     },
+    weight: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     warranty: {
       type: String,
     },

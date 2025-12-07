@@ -68,6 +68,7 @@ const EditProductForm = () => {
       width: 0,
       height: 0,
     },
+    weight: 0,
     warranty: "",
     shippingOrigin: "",
     featured: "",
@@ -112,10 +113,17 @@ const EditProductForm = () => {
           };
         }
 
-        setFields({
+        setFields((prev) => ({
+          ...prev,
           ...productData,
           deliveryOptions,
-        });
+          dimensions: {
+            length: productData.dimensions?.length || 0,
+            width: productData.dimensions?.width || 0,
+            height: productData.dimensions?.height || 0,
+          },
+          weight: productData.weight ?? 0,
+        }));
         setPreviewImage(productData.thumbnail);
         setLoading(false);
       } catch (error) {
@@ -197,7 +205,8 @@ const EditProductForm = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const finalValue = type === "number" ? (parseFloat(value) || 0) : value;
 
     if (name.includes(".")) {
       const [outerKey, innerKey] = name.split(".");
@@ -205,13 +214,13 @@ const EditProductForm = () => {
         ...prevFields,
         [outerKey]: {
           ...prevFields[outerKey],
-          [innerKey]: value,
+          [innerKey]: finalValue,
         },
       }));
     } else {
       setFields((prevFields) => ({
         ...prevFields,
-        [name]: value,
+        [name]: finalValue,
       }));
     }
     if (errors[name]) {
@@ -600,6 +609,9 @@ const EditProductForm = () => {
                       <Label data-oid="v509qwr">
                         Product Dimensions (cm)
                       </Label>
+                      <p className="-mt-2 text-xs text-muted-foreground">
+                        Helps calculate accurate courier quotes.
+                      </p>
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <Label htmlFor="length" className="text-xs text-muted-foreground">Length</Label>
@@ -643,7 +655,23 @@ const EditProductForm = () => {
                       </div>
                     </div>
 
-                    <div className="grid gap-3" data-oid="s2kjrqt">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                      <Label htmlFor="weight">Weight (kg)</Label>
+                      <Input
+                        id="weight"
+                        type="number"
+                        name="weight"
+                        min="0"
+                        step="0.1"
+                        placeholder="0"
+                        value={fields.weight}
+                        onChange={handleChange}
+                      />
+                      
+                    </div>
+
+                    <div>
                       <Label htmlFor="warranty" data-oid="k9.:z.q">
                         Warranty
                       </Label>
@@ -656,6 +684,7 @@ const EditProductForm = () => {
                         onChange={handleChange}
                         data-oid="e5u:c-m"
                       />
+                    </div>
                     </div>
 
                     <div className="grid gap-3" data-oid="c.5sc-:">

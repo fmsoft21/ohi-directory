@@ -18,7 +18,7 @@ export async function GET(request) {
     }
 
     let cart = await Cart.findOne({ user: sessionUser.userId })
-      .populate('items.product', 'title images price stock ownerName');
+      .populate('items.product', 'title images price stock ownerName deliveryOptions');
 
     // Create cart if doesn't exist
     if (!cart) {
@@ -113,7 +113,7 @@ export async function POST(request) {
     
     // Populate product details
     cart = await Cart.findById(cart._id)
-      .populate('items.product', 'title images price stock ownerName');
+      .populate('items.product', 'title images price stock ownerName deliveryOptions');
 
     return new Response(JSON.stringify(cart), {
       status: 200,
@@ -187,7 +187,7 @@ export async function PUT(request) {
 
     // Populate product details
     cart = await Cart.findById(cart._id)
-      .populate('items.product', 'title images price stock ownerName');
+      .populate('items.product', 'title images price stock ownerName deliveryOptions');
 
     return new Response(JSON.stringify(cart), {
       status: 200,
@@ -231,7 +231,7 @@ export async function DELETE(request) {
 
     // Populate product details
     cart = await Cart.findById(cart._id)
-      .populate('items.product', 'title images price stock ownerName');
+      .populate('items.product', 'title images price stock ownerName deliveryOptions');
 
     return new Response(JSON.stringify(cart), {
       status: 200,

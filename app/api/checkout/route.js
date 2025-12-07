@@ -3,11 +3,13 @@ import connectDB from '@/config/database';
 import mongoose from 'mongoose';
 import Order from '@/models/Order';
 import Cart from '@/models/Cart';
-import Product from '@/models/Product';
 import User from '@/models/User';
+import Product from '@/models/Product';
 import { getSessionUser } from '@/utils/getSessionUser';
 import { calculateShipping, estimateDelivery, validateShippingAddress, getAvailableShippingMethods } from '@/utils/shipping';
 import { createPayFastPayment } from '@/utils/payfast';
+import { CourierServiceManager } from '@/utils/courierServices';
+import { buildSellerSnapshot, buildParcelsForItem, summarizeParcels } from '@/utils/orderShippingHelpers';
 
 // Helper function to send JSON responses
 const jsonResponse = (data, status = 200) => {
@@ -38,16 +40,69 @@ export async function GET(request) {
     const province = searchParams.get('province') || 'Gauteng';
 
     const cart = await Cart.findOne({ user: sessionUser.userId })
-      .populate('items.product', 'deliveryOptions');
+      .populate({
+        path: 'items.product',
+        select: 'deliveryOptions owner ownerName title dimensions weight price',
+        populate: {
+          path: 'owner',
+          select: 'storename email phone address city province zipCode country',
+        },
+      });
 
     if (!cart || cart.items.length === 0) {
       return jsonResponse({ error: 'Cart is empty' }, 400);
     }
 
     const destination = { city, province };
-    const shippingMethods = getAvailableShippingMethods(cart.items, destination);
+    const courierManager = new CourierServiceManager();
+    const courierQuotesBySeller = {};
 
-    return jsonResponse({ shippingMethods });
+    const sellerParcelsMap = {};
+    for (const item of cart.items) {
+      const sellerId = item.product?.owner?._id?.toString?.();
+      if (!sellerId) continue;
+      if (!sellerParcelsMap[sellerId]) {
+        sellerParcelsMap[sellerId] = {
+          seller: item.product.owner,
+          parcels: [],
+          declaredValue: 0,
+        };
+      }
+      sellerParcelsMap[sellerId].parcels.push(...buildParcelsForItem(item));
+      sellerParcelsMap[sellerId].declaredValue += item.price * item.quantity;
+    }
+
+    await Promise.all(Object.entries(sellerParcelsMap).map(async ([sellerId, data]) => {
+      const sellerAddress = buildSellerSnapshot(data.seller);
+      const buyerAddress = {
+        type: 'residential',
+        city,
+        province,
+        postalCode: '',
+        address: '',
+      };
+
+      try {
+        const quotes = await courierManager.getAllQuotes({
+          from: sellerAddress,
+          to: buyerAddress,
+          parcels: summarizeParcels(data.parcels).parcels,
+          declaredValue: data.declaredValue,
+        });
+        courierQuotesBySeller[sellerId] = quotes;
+      } catch (err) {
+        console.warn('Failed to fetch courier quotes for seller', sellerId, err.message);
+        courierQuotesBySeller[sellerId] = [];
+      }
+    }));
+
+    const shippingMethods = getAvailableShippingMethods(
+      cart.items,
+      destination,
+      Object.values(courierQuotesBySeller).flat()
+    );
+
+    return jsonResponse({ shippingMethods, courierQuotes: courierQuotesBySeller });
 
   } catch (error) {
     console.error('Checkout GET error:', error);
@@ -84,11 +139,26 @@ export async function POST(request) {
       }, 400);
     }
 
-    const { shippingAddress, shippingMethod, paymentMethod, customerNotes } = body;
+    const {
+      shippingAddress,
+      shippingMethod,
+      paymentMethod,
+      customerNotes,
+      shippingOption = 'door-to-door',
+      lockerSelection,
+    } = body;
+
+    const fulfillmentOption = shippingOption || 'door-to-door';
+    const resolvedShippingMethod = (() => {
+      if (fulfillmentOption === 'collection') return 'collection';
+      if (fulfillmentOption === 'pudo') return 'pudo';
+      return shippingMethod || 'standard';
+    })();
 
     console.log('📦 Checkout initiated:', {
       userId: sessionUser.userId,
-      shippingMethod,
+      shippingMethod: resolvedShippingMethod,
+      fulfillmentOption,
       paymentMethod,
       hasAddress: !!shippingAddress
     });
@@ -115,18 +185,54 @@ export async function POST(request) {
       postalCode: shippingAddress.postalCode || shippingAddress.zipCode || '',
     };
 
-    console.log('📍 Normalized address:', normalizedAddress);
+    let lockerDetailsPayload = null;
 
-    // Validate shipping address
-    const addressValidation = validateShippingAddress(normalizedAddress);
-    if (!addressValidation.valid) {
-      console.error('❌ Invalid address:', addressValidation.errors);
-      return jsonResponse({ 
-        error: 'Invalid shipping address', 
-        details: addressValidation.errors,
+    if (!normalizedAddress.fullName || !normalizedAddress.email) {
+      return jsonResponse({
+        error: 'Full name and email are required',
         field: 'shippingAddress'
       }, 400);
     }
+
+    if (fulfillmentOption === 'door-to-door') {
+      const addressValidation = validateShippingAddress(normalizedAddress);
+      if (!addressValidation.valid) {
+        console.error('❌ Invalid address:', addressValidation.errors);
+        return jsonResponse({ 
+          error: 'Invalid shipping address', 
+          details: addressValidation.errors,
+          field: 'shippingAddress'
+        }, 400);
+      }
+    } else if (fulfillmentOption === 'pudo') {
+      if (!lockerSelection) {
+        return jsonResponse({
+          error: 'Locker selection is required for PUDO deliveries',
+          field: 'lockerSelection'
+        }, 400);
+      }
+      normalizedAddress.address = lockerSelection.address || normalizedAddress.address || 'PUDO Locker';
+      normalizedAddress.apartment = lockerSelection.name || lockerSelection.lockerName || normalizedAddress.apartment;
+      normalizedAddress.city = lockerSelection.city || normalizedAddress.city || '';
+      normalizedAddress.province = lockerSelection.province || normalizedAddress.province || '';
+      normalizedAddress.postalCode = lockerSelection.postalCode || normalizedAddress.postalCode || '0000';
+
+      lockerDetailsPayload = {
+        provider: 'pudo',
+        lockerId: lockerSelection.id || lockerSelection.lockerId || lockerSelection.lockerID,
+        lockerName: lockerSelection.name || lockerSelection.lockerName || 'PUDO Locker',
+        lockerAddress: lockerSelection.address || normalizedAddress.address,
+        distanceKm: lockerSelection.distanceKm ?? lockerSelection.distance ?? null,
+        status: lockerSelection.status || 'pending',
+      };
+    } else if (fulfillmentOption === 'collection') {
+      normalizedAddress.address = normalizedAddress.address || 'Collection - buyer to arrange pickup';
+      normalizedAddress.city = normalizedAddress.city || 'Collection';
+      normalizedAddress.province = normalizedAddress.province || 'Collection';
+      normalizedAddress.postalCode = normalizedAddress.postalCode || '0000';
+    }
+
+    console.log('📍 Normalized address:', normalizedAddress);
 
     // Get buyer details
     const buyer = await User.findById(sessionUser.userId);
@@ -141,11 +247,11 @@ export async function POST(request) {
     const cart = await Cart.findOne({ user: sessionUser.userId })
       .populate({
         path: 'items.product',
-        select: 'title images price stock ownerName owner deliveryOptions',
+        select: 'title images price stock ownerName owner deliveryOptions dimensions weight',
         populate: {
           path: 'owner',
-          select: 'storename email'
-        }
+          select: 'storename email phone address city province zipCode country',
+        },
       });
 
     if (!cart || cart.items.length === 0) {
@@ -216,6 +322,7 @@ export async function POST(request) {
     for (const item of cart.items) {
       const sellerId = item.product.owner._id.toString();
       const sellerName = item.product.owner.storename || item.product.ownerName || 'Unknown Seller';
+      const sellerSnapshot = buildSellerSnapshot(item.product.owner);
       
       if (!ordersBySeller[sellerId]) {
         ordersBySeller[sellerId] = {
@@ -223,6 +330,8 @@ export async function POST(request) {
           sellerName: sellerName,
           items: [],
           subtotal: 0,
+          sellerAddress: sellerSnapshot,
+          parcels: [],
         };
       }
       
@@ -238,6 +347,7 @@ export async function POST(request) {
       });
       
       ordersBySeller[sellerId].subtotal += item.price * item.quantity;
+      ordersBySeller[sellerId].parcels.push(...buildParcelsForItem(item));
     }
 
     console.log(`📊 Orders grouped by ${Object.keys(ordersBySeller).length} seller(s)`);
@@ -258,7 +368,7 @@ export async function POST(request) {
               weight: 0.5, // Default weight
             })),
             normalizedAddress,
-            shippingMethod || 'standard'
+            resolvedShippingMethod
           );
 
           const tax = orderData.subtotal * 0.15; // 15% VAT
@@ -288,6 +398,7 @@ export async function POST(request) {
             // Shipping address (REQUIRED)
             shippingAddress: {
               fullName: normalizedAddress.fullName || normalizedAddress.company || buyer.storename || 'Customer',
+              email: normalizedAddress.email || buyer.email,
               phone: normalizedAddress.phone || '',
               address: normalizedAddress.address,
               apartment: normalizedAddress.apartment || '',
@@ -296,14 +407,18 @@ export async function POST(request) {
               zipCode: normalizedAddress.postalCode,
               country: 'South Africa',
             },
+            sellerAddressSnapshot: orderData.sellerAddress,
+            parcelSummary: summarizeParcels(orderData.parcels),
             
             // Shipping method
-            shippingMethod: shippingMethod || 'standard',
+            shippingMethod: resolvedShippingMethod,
+            fulfillmentOption,
             estimatedDelivery: estimateDelivery(
-              shippingMethod || 'standard', 
+              resolvedShippingMethod, 
               'Johannesburg', 
               normalizedAddress.city
             ),
+            lockerDetails: lockerDetailsPayload ? { ...lockerDetailsPayload } : undefined,
             
             // Payment (REQUIRED)
             paymentMethod: paymentMethod || 'payfast',

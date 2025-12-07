@@ -25,11 +25,85 @@ const OrderItemSchema = new Schema({
   }
 });
 
+const AddressSnapshotSchema = new Schema({
+  name: String,
+  company: String,
+  email: String,
+  phone: String,
+  address: String,
+  apartment: String,
+  city: String,
+  province: String,
+  zipCode: String,
+  country: {
+    type: String,
+    default: 'South Africa',
+  },
+  notes: String,
+}, { _id: false });
+
+const ParcelSchema = new Schema({
+  description: String,
+  weightKg: Number,
+  lengthCm: Number,
+  widthCm: Number,
+  heightCm: Number,
+  quantity: {
+    type: Number,
+    default: 1,
+    min: 1,
+  },
+  productId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Product',
+  },
+  sku: String,
+}, { _id: false });
+
+const ParcelSummarySchema = new Schema({
+  totalParcels: {
+    type: Number,
+    default: 0,
+  },
+  totalWeightKg: {
+    type: Number,
+    default: 0,
+  },
+  parcels: [ParcelSchema],
+}, { _id: false });
+
+const CourierQuoteSchema = new Schema({
+  provider: String,
+  serviceCode: String,
+  serviceName: String,
+  price: Number,
+  currency: {
+    type: String,
+    default: 'ZAR',
+  },
+  etaDays: Number,
+  expiresAt: Date,
+  raw: Schema.Types.Mixed,
+}, { _id: false });
+
+const LockerDetailsSchema = new Schema({
+  provider: String,
+  lockerId: String,
+  lockerName: String,
+  lockerAddress: String,
+  distanceKm: Number,
+  status: String,
+  senderPin: String,
+  recipientPin: String,
+  expiresAt: Date,
+}, { _id: false });
+
 const ShippingAddressSchema = new Schema({
   fullName: {
     type: String,
     required: true,
   },
+  email: String,
   phone: String,
   address: {
     type: String,
@@ -126,10 +200,25 @@ const OrderSchema = new Schema(
     },
     shippingMethod: {
       type: String,
-      enum: ['standard', 'express', 'collection'],
+      enum: ['standard', 'express', 'collection', 'pudo'],
       default: 'standard',
     },
+    fulfillmentOption: {
+      type: String,
+      enum: ['door-to-door', 'pudo', 'collection'],
+      default: 'door-to-door',
+    },
     estimatedDelivery: Date,
+    sellerAddressSnapshot: AddressSnapshotSchema,
+    parcelSummary: ParcelSummarySchema,
+    courierQuote: CourierQuoteSchema,
+    lockerDetails: LockerDetailsSchema,
+    courierSandbox: {
+      type: Boolean,
+      default: false,
+    },
+    deliveryInstructions: String,
+    pickupInstructions: String,
     
     // Payment (REQUIRED)
     paymentMethod: {

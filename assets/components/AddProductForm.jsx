@@ -60,6 +60,7 @@ const AddProductForm = () => {
       width: 0,
       height: 0,
     },
+    weight: 0,
     warranty: "",
     shippingOrigin: "",
     featured: "",
@@ -325,6 +326,7 @@ const AddProductForm = () => {
       formData.append("dimensions", JSON.stringify(fields.dimensions));
       formData.append("warranty", fields.warranty || "");
       formData.append("shippingOrigin", fields.shippingOrigin || "");
+      formData.append("weight", fields.weight ?? 0);
       formData.append("featured", fields.featured || "");
       formData.append("status", fields.status || "");
 
@@ -650,6 +652,9 @@ const AddProductForm = () => {
                       <Label data-oid=".sh-s3n">
                         Product Dimensions (cm)
                       </Label>
+                      <p className="-mt-2 text-xs text-muted-foreground">
+                        Helps calculate accurate courier quotes.
+                      </p>
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <Label htmlFor="length" className="text-xs text-muted-foreground">Length</Label>
@@ -693,8 +698,25 @@ const AddProductForm = () => {
                       </div>
                     </div>
 
+                    {/* Weight */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                      <Label htmlFor="weight">Weight (kg)</Label>
+                      <Input
+                        id="weight"
+                        type="number"
+                        name="weight"
+                        min="0"
+                        step="0.1"
+                        placeholder="0"
+                        value={fields.weight}
+                        onChange={handleChange}
+                      />
+                     
+                    </div>
+
                     {/* Warranty */}
-                    <div className="grid gap-3" data-oid="tw4llqc">
+                    <div>
                       <Label htmlFor="warranty" data-oid="t:blpa7">
                         Warranty
                       </Label>
@@ -707,6 +729,7 @@ const AddProductForm = () => {
                         onChange={handleChange}
                         data-oid="11p:dma"
                       />
+                    </div>
                     </div>
 
                     {/* Shipping Origin */}

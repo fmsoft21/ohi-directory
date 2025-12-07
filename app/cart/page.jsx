@@ -37,6 +37,9 @@ export default function CartPage() {
   const { data: session } = useSession();
   const { cart, loading, updateQuantity, removeFromCart } = useCart();
   const [updatingItems, setUpdatingItems] = useState(new Set());
+  const subtotal = cart?.subtotal || 0;
+  const tax = cart?.tax || 0;
+  const estimatedTotal = subtotal + tax;
 
   if (!session) {
     return (
@@ -211,7 +214,7 @@ export default function CartPage() {
 
             {/* Order summary */}
             <section aria-labelledby="summary-heading" className="mt-10 sm:mx-24">
-              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-4 py-6 sm:p-6 lg:p-8">
+              <div className="rounded-lg bg-gray-50 dark:bg-zinc-800 px-4 py-6 sm:p-6 lg:p-8">
                 <h2 id="summary-heading" className="sr-only">
                   Order summary
                 </h2>
@@ -223,24 +226,24 @@ export default function CartPage() {
                       <dd className="font-medium">R {cart.subtotal.toFixed(2)}</dd>
                     </div>
                     <div className="flex items-center justify-between py-4">
-                      <dt className="text-gray-600 dark:text-gray-400">
-                        Shipping
-                        {cart.shipping === 0 && (
-                          <span className="ml-2 text-green-600 text-xs">(Free)</span>
-                        )}
-                      </dt>
-                      <dd className="font-medium">R {cart.shipping.toFixed(2)}</dd>
+                      <dt className="text-gray-600 dark:text-gray-400">Shipping</dt>
+                      <dd className="text-sm text-muted-foreground text-right">
+                        Calculated at checkout
+                      </dd>
                     </div>
                     <div className="flex items-center justify-between py-4">
                       <dt className="text-gray-600 dark:text-gray-400">Tax (15% VAT)</dt>
-                      <dd className="font-medium">R {cart.tax.toFixed(2)}</dd>
+                      <dd className="font-medium">R {tax.toFixed(2)}</dd>
                     </div>
                     <div className="flex items-center justify-between py-4">
-                      <dt className="text-base font-medium">Order total</dt>
-                      <dd className="text-base font-medium">R {cart.total.toFixed(2)}</dd>
+                      <dt className="text-base font-medium">Estimated total (excl. shipping)</dt>
+                      <dd className="text-base font-medium">R {estimatedTotal.toFixed(2)}</dd>
                     </div>
                   </dl>
                 </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Sellers arrange courier collections after checkout. Final shipping charges are confirmed once the courier is booked.
+                </p>
               </div>
 
               <div className="mt-10">
@@ -266,7 +269,7 @@ export default function CartPage() {
       </main>
 
       {/* Policy grid */}
-      <section aria-labelledby="policies-heading" className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+      <section aria-labelledby="policies-heading" className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-zinc-800">
         <h2 id="policies-heading" className="sr-only">
           Our policies
         </h2>

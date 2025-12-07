@@ -280,6 +280,7 @@ export const PUT = async (request, { params }) => {
       category: formData.get("category"),
       deliveryOptions: JSON.parse(formData.get("deliveryOptions") || "{}"),
       dimensions: JSON.parse(formData.get("dimensions") || "{}"),
+      weight: parseFloat(formData.get("weight")) || 0,
       warranty: formData.get("warranty"),
       shippingOrigin: formData.get("shippingOrigin"),
       featured: formData.get("featured"),

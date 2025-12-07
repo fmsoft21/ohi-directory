@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +55,9 @@ import {
   TrendingUp,
   CreditCard,
   Receipt,
+  Download,
+  Eye,
+  BarChart3,
 } from "lucide-react";
 import { useToast } from "@/components/hooks/use-toast";
 
@@ -84,6 +97,8 @@ export default function AdminWalletClient() {
   });
   const [pendingPayouts, setPendingPayouts] = useState([]);
   const [activeTab, setActiveTab] = useState("transactions");
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [transactionDetailsOpen, setTransactionDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
@@ -198,6 +213,11 @@ export default function AdminWalletClient() {
     }).format(Math.abs(amount));
   };
 
+  const handleViewTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setTransactionDetailsOpen(true);
+  };
+
   const StatsCard = ({ title, value, icon: Icon, color = "emerald", isNegative = false }) => {
     const colorClasses = {
       emerald: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30",
@@ -227,18 +247,31 @@ export default function AdminWalletClient() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-4 md:p-0">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Wallet & Transactions</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Wallet className="h-8 w-8 text-emerald-600" />
+            Wallet & Transactions
+          </h1>
+          <p className="text-muted-foreground mt-1">
             Manage all transactions and seller payouts
           </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" size="sm">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard title="Total Platform Revenue" value={stats.totalRevenue} icon={TrendingUp} color="emerald" />
         <StatsCard title="Total Fees Collected" value={stats.totalFees} icon={Receipt} color="purple" />
         <StatsCard title="Pending Payouts" value={stats.pendingPayouts} icon={Clock} color="yellow" />
@@ -246,15 +279,17 @@ export default function AdminWalletClient() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button
           variant={activeTab === "transactions" ? "default" : "outline"}
+          size="sm"
           onClick={() => setActiveTab("transactions")}
         >
           All Transactions
         </Button>
         <Button
           variant={activeTab === "payouts" ? "default" : "outline"}
+          size="sm"
           onClick={() => setActiveTab("payouts")}
         >
           Pending Payouts ({pendingPayouts.length})
@@ -322,74 +357,157 @@ export default function AdminWalletClient() {
                 </div>
               ) : (
                 <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Transaction ID</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>From/To</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.map((tx) => {
-                        const TypeIcon = transactionTypeConfig[tx.type]?.icon || DollarSign;
-                        const isPositive = tx.type === 'sale';
-                        return (
-                          <TableRow key={tx._id}>
-                            <TableCell>
-                              <p className="font-mono text-xs">{tx._id?.slice(-8) || 'N/A'}</p>
-                              {tx.orderNumber && (
-                                <p className="text-xs text-muted-foreground">{tx.orderNumber}</p>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={transactionTypeConfig[tx.type]?.color}>
-                                <TypeIcon className="h-3 w-3 mr-1" />
-                                {transactionTypeConfig[tx.type]?.label || tx.type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                  {isPositive ? '+' : '-'}{formatCurrency(tx.amount)}
-                                </p>
-                                {tx.fee > 0 && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Fee: {formatCurrency(tx.fee)}
-                                  </p>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Transaction ID</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>From/To</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((tx) => {
+                          const TypeIcon = transactionTypeConfig[tx.type]?.icon || DollarSign;
+                          const isPositive = tx.type === 'sale';
+                          return (
+                            <TableRow key={tx._id}>
+                              <TableCell>
+                                <p className="font-mono text-xs">{tx._id?.slice(-8) || 'N/A'}</p>
+                                {tx.orderNumber && (
+                                  <p className="text-xs text-muted-foreground">{tx.orderNumber}</p>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {tx.seller?.storename || tx.sellerName || 'N/A'}
-                                </p>
-                                {tx.buyerName && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Buyer: {tx.buyerName}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={transactionTypeConfig[tx.type]?.color}>
+                                  <TypeIcon className="h-3 w-3 mr-1" />
+                                  {transactionTypeConfig[tx.type]?.label || tx.type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                    {isPositive ? '+' : '-'}{formatCurrency(tx.amount)}
                                   </p>
-                                )}
+                                  {tx.fee > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Fee: {formatCurrency(tx.fee)}
+                                    </p>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {tx.seller?.storename || tx.sellerName || 'N/A'}
+                                  </p>
+                                  {tx.buyerName && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Buyer: {tx.buyerName}
+                                    </p>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={statusConfig[tx.status]?.color}>
+                                  {statusConfig[tx.status]?.label || tx.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDate(tx.createdAt)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleViewTransaction(tx)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {transactions.map((tx) => {
+                      const TypeIcon = transactionTypeConfig[tx.type]?.icon || DollarSign;
+                      const isPositive = tx.type === 'sale';
+                      return (
+                        <div
+                          key={tx._id}
+                          className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`p-2 rounded-lg ${
+                                tx.type === 'sale' ? 'bg-green-100 dark:bg-green-900/30' :
+                                tx.type === 'refund' ? 'bg-red-100 dark:bg-red-900/30' :
+                                'bg-blue-100 dark:bg-blue-900/30'
+                              }`}>
+                                <TypeIcon className="h-4 w-4" />
                               </div>
-                            </TableCell>
-                            <TableCell>
+                              <div>
+                                <Badge className={transactionTypeConfig[tx.type]?.color}>
+                                  {transactionTypeConfig[tx.type]?.label || tx.type}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewTransaction(tx)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Amount</span>
+                              <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                {isPositive ? '+' : '-'}{formatCurrency(tx.amount)}
+                              </span>
+                            </div>
+                            {tx.fee > 0 && (
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Fee</span>
+                                <span>{formatCurrency(tx.fee)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Seller</span>
+                              <span className="text-sm font-medium">
+                                {tx.seller?.storename || tx.sellerName || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">Status</span>
                               <Badge className={statusConfig[tx.status]?.color}>
                                 {statusConfig[tx.status]?.label || tx.status}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm text-muted-foreground">
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Date</span>
+                              <span className="text-xs text-muted-foreground">
                                 {formatDate(tx.createdAt)}
                               </span>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
                   {/* Pagination */}
                   <div className="flex items-center justify-between mt-4">
@@ -475,7 +593,7 @@ export default function AdminWalletClient() {
                             Process Payout
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md rounded-lg">
                           <AlertDialogHeader>
                             <AlertDialogTitle>Process Payout</AlertDialogTitle>
                             <AlertDialogDescription>
@@ -501,6 +619,79 @@ export default function AdminWalletClient() {
           </CardContent>
         </Card>
       )}
+
+      {/* Transaction Details Dialog */}
+      <Dialog open={transactionDetailsOpen} onOpenChange={setTransactionDetailsOpen}>
+        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this transaction
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Transaction ID</p>
+                  <p className="font-mono text-sm">{selectedTransaction._id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <Badge className={transactionTypeConfig[selectedTransaction.type]?.color}>
+                    {transactionTypeConfig[selectedTransaction.type]?.label || selectedTransaction.type}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Amount</p>
+                  <p className="font-semibold text-lg">
+                    {formatCurrency(selectedTransaction.amount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge className={statusConfig[selectedTransaction.status]?.color}>
+                    {statusConfig[selectedTransaction.status]?.label || selectedTransaction.status}
+                  </Badge>
+                </div>
+                {selectedTransaction.fee > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Platform Fee</p>
+                    <p className="font-medium">{formatCurrency(selectedTransaction.fee)}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="text-sm">{formatDate(selectedTransaction.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Seller</p>
+                  <p className="text-sm font-medium">
+                    {selectedTransaction.seller?.storename || selectedTransaction.sellerName || 'N/A'}
+                  </p>
+                </div>
+                {selectedTransaction.buyerName && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Buyer</p>
+                    <p className="text-sm font-medium">{selectedTransaction.buyerName}</p>
+                  </div>
+                )}
+                {selectedTransaction.orderNumber && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground">Order Number</p>
+                    <p className="text-sm font-medium">{selectedTransaction.orderNumber}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransactionDetailsOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

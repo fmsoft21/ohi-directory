@@ -9,6 +9,7 @@ export function calculateShipping(items, destination, method = 'standard') {
     standard: 50,
     express: 100,
     collection: 0,
+    pudo: 0,
   };
 
   // Weight-based calculation (simplified)
@@ -24,7 +25,8 @@ export function calculateShipping(items, destination, method = 'standard') {
   }
 
   // Calculate base cost
-  let shippingCost = baseRates[method];
+  const resolvedMethod = Object.prototype.hasOwnProperty.call(baseRates, method) ? method : 'standard';
+  let shippingCost = baseRates[resolvedMethod];
   
   // Add weight surcharge (R10 per kg over 5kg)
   if (totalWeight > 5) {
@@ -35,7 +37,7 @@ export function calculateShipping(items, destination, method = 'standard') {
   shippingCost *= distanceModifier;
   
   // Free shipping over R500 for standard
-  if (method === 'standard') {
+  if (resolvedMethod === 'standard') {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     if (subtotal >= 500) {
       shippingCost = 0;
@@ -58,6 +60,9 @@ export function estimateDelivery(method = 'standard', origin = 'Johannesburg', d
       break;
     case 'standard':
       businessDays = 3; // 3-5 business days (average)
+      break;
+    case 'pudo':
+      businessDays = 2; // Delivery timing for PUDO lockers
       break;
     case 'collection':
       businessDays = 0; // Same day or next day
@@ -90,7 +95,7 @@ export function estimateDelivery(method = 'standard', origin = 'Johannesburg', d
 /**
  * Get available shipping methods based on cart items
  */
-export function getAvailableShippingMethods(items, destination) {
+export function getAvailableShippingMethods(items, destination, courierQuotes = []) {
   const methods = [];
 
   // Check if all items support delivery
@@ -102,6 +107,17 @@ export function getAvailableShippingMethods(items, destination) {
   const supportsCollection = items.some(item => 
     item.product?.deliveryOptions?.collection === true
   );
+
+  const courierOptions = courierQuotes.map((quote, index) => ({
+    id: `courier-${quote.provider}-${index}`,
+    name: quote.name || quote.provider,
+    description: quote.service_level || quote.serviceName || 'Courier service',
+    cost: quote.price || quote.amount || 0,
+    estimatedDelivery: quote.estimated_delivery || quote.estimatedDelivery || estimateDelivery('standard', 'Johannesburg', destination.city),
+    provider: quote.provider,
+    courierQuote: quote,
+    type: 'courier',
+  }));
 
   if (supportsDelivery) {
     methods.push({
@@ -119,6 +135,10 @@ export function getAvailableShippingMethods(items, destination) {
       cost: calculateShipping(items, destination, 'express'),
       estimatedDelivery: estimateDelivery('express', 'Johannesburg', destination.city),
     });
+  }
+
+  if (courierOptions.length > 0) {
+    methods.push(...courierOptions);
   }
 
   if (supportsCollection) {

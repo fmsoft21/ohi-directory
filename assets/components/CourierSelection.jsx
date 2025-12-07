@@ -38,22 +38,6 @@ export default function CourierSelection({ order, onBooked }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order._id,
-          deliveryAddress: {
-            type: "residential",
-            address: order.shippingAddress.address,
-            suburb: order.shippingAddress.apartment,
-            city: order.shippingAddress.city,
-            postalCode: order.shippingAddress.postalCode,
-            province: order.shippingAddress.province,
-          },
-          collectionAddress: {
-            company: "Your Store",
-            address: "Your collection address",
-            city: "Your city",
-            postalCode: "Your postal code",
-            province: "Your province",
-          },
-          declaredValue: order.total,
         }),
       });
 
@@ -61,12 +45,13 @@ export default function CourierSelection({ order, onBooked }) {
         const data = await res.json();
         setQuotes(data.quotes);
       } else {
-        throw new Error("Failed to fetch quotes");
+        const error = await res.json();
+        throw new Error(error?.error || "Failed to fetch quotes");
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to fetch courier quotes",
+        description: error.message || "Failed to fetch courier quotes",
         variant: "destructive",
       });
     } finally {
@@ -77,8 +62,9 @@ export default function CourierSelection({ order, onBooked }) {
   const fetchPudoLockers = async () => {
     try {
       setLoading(true);
+      const postalCode = order.shippingAddress?.zipCode || order.shippingAddress?.postalCode || "";
       const res = await fetch(
-        `/api/courier/pudo-lockers?postalCode=${order.shippingAddress.postalCode}&city=${order.shippingAddress.city}`
+        `/api/courier/pudo-lockers?postalCode=${encodeURIComponent(postalCode)}&city=${encodeURIComponent(order.shippingAddress.city)}`
       );
 
       if (res.ok) {
@@ -206,8 +192,8 @@ export default function CourierSelection({ order, onBooked }) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-emerald-600">
-                        R {quote.price?.toFixed(2) || "0.00"}
+                        <p className="text-lg font-bold text-emerald-600">
+                          R {(quote.price ?? quote.amount ?? 0).toFixed(2)}
                       </p>
                       {quote.originalPrice && (
                         <p className="text-sm text-muted-foreground line-through">
