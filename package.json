@@ -45,7 +45,7 @@
     "megajs": "^1.3.3",
     "mongodb": "^6.8.0",
     "mongoose": "^8.5.1",
-    "next": "^16.0.1",
+    "next": "^16.0.7",
     "next-auth": "^4.24.7",
     "next-cloudinary": "^6.10.0",
     "next-pwa": "^5.6.0",
