@@ -1,10 +1,14 @@
 import mongoose from 'mongoose';
 const { Schema, model, models } = mongoose;
 
-const blogSchema = new Schema({
-  title: String,
-  slug: String,
-});
+let BlogSchema = models.Blog ? models.Blog.schema : null;
 
-const Blog = models.Blog || model('Blog', blogSchema);
+if (!BlogSchema) {
+  BlogSchema = new Schema({
+    title: String,
+    slug: String,
+  });
+}
+
+const Blog = models.Blog || model('Blog', BlogSchema);
 export default Blog;
