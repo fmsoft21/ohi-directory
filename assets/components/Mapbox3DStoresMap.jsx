@@ -445,11 +445,11 @@ export default function Mapbox3DStoresMap({ stores = [], onStoreSelect }) {
       )}
 
       {/* Current Style Indicator - hidden on mobile when selected store card is shown */}
-      <div className={`absolute ${selectedStore ? 'hidden md:block md:bottom-48' : 'bottom-4'} right-4 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200`}>
+      {/* <div className={`absolute ${selectedStore ? 'hidden md:block md:bottom-48' : 'bottom-4'} right-4 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200`}>
         <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
           {mapStyles[mapStyle].name} Mode
         </span>
-      </div>
+      </div> */}
 
       {/* Map Container */}
       <div ref={mapContainer} className="h-full w-full rounded-lg overflow-hidden" />

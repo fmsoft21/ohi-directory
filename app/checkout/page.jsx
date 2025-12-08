@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   });
   const [shippingQuotes, setShippingQuotes] = useState({ status: 'idle', data: null, error: null });
   const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressSelectionLocked, setAddressSelectionLocked] = useState(false);
   const [addressSearchState, setAddressSearchState] = useState({ status: 'idle', error: null });
   const [shippingOption, setShippingOption] = useState('door-to-door');
   const [shippingAvailability, setShippingAvailability] = useState({
@@ -145,6 +146,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (addressSelectionLocked) {
+      setAddressSuggestions([]);
+      setAddressSearchState(prev => (prev.status === 'idle' && !prev.error ? prev : { status: 'idle', error: null }));
+      return;
+    }
+
     const query = formData.address?.trim();
 
     if (!query || query.length < 3) {
@@ -172,7 +179,7 @@ export default function CheckoutPage() {
       isActive = false;
       clearTimeout(timeoutId);
     };
-  }, [formData.address, shippingOption]);
+  }, [formData.address, shippingOption, addressSelectionLocked]);
 
   // Fetch live courier quotes when address is ready
   useEffect(() => {
@@ -252,6 +259,9 @@ export default function CheckoutPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    if (name === 'address') {
+      setAddressSelectionLocked(false);
+    }
     
     // Clear error for this field
     clearFieldError(name);
@@ -262,6 +272,7 @@ export default function CheckoutPage() {
     const components = extractAddressComponents(suggestion);
     setAddressSuggestions([]);
     setAddressSearchState({ status: 'idle', error: null });
+    setAddressSelectionLocked(true);
 
     setFormData(prev => ({
       ...prev,
@@ -274,6 +285,7 @@ export default function CheckoutPage() {
 
   const handleShippingOptionChange = (option) => {
     setShippingOption(option);
+    setAddressSelectionLocked(false);
     if (option !== 'door-to-door') {
       setShippingQuotes({ status: 'idle', data: null, error: null });
       setAddressSuggestions([]);
@@ -677,7 +689,7 @@ export default function CheckoutPage() {
   const sellerCount = Object.keys(itemsBySeller).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 mt-16">
+    <div className="pb-12 sm:pb-0 min-h-screen bg-gray-50 dark:bg-zinc-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
         
@@ -939,7 +951,7 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Street Address *</label>
+                      <label className="block text-sm font-medium mb-1">Street Address<span className="text-red-500">*</span></label>
                       <Input
                         type="text"
                         name="address"
@@ -992,9 +1004,9 @@ export default function CheckoutPage() {
                         placeholder="No. 4B"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-1">City *</label>
+                        <label className="block text-sm font-medium mb-1">City<span className="text-red-500">*</span></label>
                         <Input
                           type="text"
                           name="city"
@@ -1007,7 +1019,7 @@ export default function CheckoutPage() {
                         {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-1">Province *</label>
+                        <label className="block text-sm font-medium mb-1">Province<span className="text-red-500">*</span></label>
                         <select
                           name="province"
                           value={formData.province}
@@ -1030,7 +1042,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Postal Code *</label>
+                      <label className="block text-sm font-medium mb-1">Postal Code<span className="text-red-500">*</span></label>
                       <Input
                         type="text"
                         name="postalCode"
@@ -1094,7 +1106,7 @@ export default function CheckoutPage() {
                               </div>
                               {seller.bestQuote && (
                                 <div className="text-right">
-                                  <p className="text-sm font-semibold">From R {(seller.bestQuote.price ?? 0).toFixed(2)}</p>
+                                  <p className="text-sm font-semibold">From R{(seller.bestQuote.price ?? 0).toFixed(2)}</p>
                                   {seller.bestQuote.estimatedDays && (
                                     <p className="text-xs text-muted-foreground">~ {seller.bestQuote.estimatedDays} days</p>
                                   )}
@@ -1233,7 +1245,7 @@ export default function CheckoutPage() {
                     <Separator />
                     
                     <div className="flex justify-between text-lg font-bold">
-                      <span>
+                      <div>
                         Estimated total {
                           shippingOption === 'door-to-door'
                             ? hasEstimatedShipping
@@ -1243,10 +1255,10 @@ export default function CheckoutPage() {
                               ? '(collection)'
                               : '(locker courier billed separately)'
                         }
-                      </span>
-                      <span>
-                        R {(totalWithEstimatedShipping ?? estimatedTotal).toFixed(2)}
-                      </span>
+                      </div>
+                      <div>
+                        R{(totalWithEstimatedShipping ?? estimatedTotal).toFixed(2)}
+                      </div>
                     </div>
                   </div>
 
@@ -1267,7 +1279,7 @@ export default function CheckoutPage() {
                 disabled={isSubmitting}
                 className="w-full h-12 text-lg"
               >
-                {isSubmitting ? 'Processing...' : `Complete Order (R ${checkoutButtonTotal.toFixed(2)})`}
+                {isSubmitting ? 'Processing...' : `Complete Order (R${checkoutButtonTotal.toFixed(2)})`}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">

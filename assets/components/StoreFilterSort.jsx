@@ -4,8 +4,7 @@ import StoreListCard from '@/assets/components/StoreListCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Map, Grid3x3, List } from 'lucide-react';
-import { MagnifyingGlassCircleIcon } from '@heroicons/react/24/solid';
+import { Grid3x3, List } from 'lucide-react';
 
 const provinces = [
   "All Provinces",
@@ -20,7 +19,7 @@ const provinces = [
   "North West"
 ];
 
-export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, viewMode, onViewModeChange, onMapClick }) {
+export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, viewMode, onViewModeChange }) {
   const [search, setSearch] = React.useState('');
   const [province, setProvince] = React.useState('All Provinces');
   const [sortBy, setSortBy] = React.useState('createdAt');
@@ -79,26 +78,13 @@ export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, 
   return (
     <div className="mb-6">
       {/* Controls Bar */}
-      <div className="flex flex-row items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 mb-6">
-        {/* Map Button */}
-        {onMapClick && (
-          <Button
-            onClick={onMapClick}
-            variant="outline"
-            size="sm"
-            className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white border-none"
-          >
-            <Map className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Map</span>
-          </Button>
-        )}
-
+      <div className="flex flex-row items-center gap-2 bg-zinc-100 dark:bg-zinc-900 p-3 sm:p-4 rounded-xl dark:border-gray-800 mb-6">
         {/* Search Input - Takes remaining space */}
         <Input
           aria-label="Search stores"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search..."
+          placeholder="Search Stores..."
           className="flex-1 min-w-[120px] h-9 px-3 py-2 dark:bg-zinc-900 dark:text-white bg-white text-gray-900 text-sm"
         />
 
@@ -107,7 +93,7 @@ export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, 
           value={province}
           onValueChange={(value) => setProvince(value)}
         >
-          <SelectTrigger className="hidden sm:block sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
+          <SelectTrigger className="hidden sm:inline-flex sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
             <SelectValue placeholder="Province" />
           </SelectTrigger>
           <SelectContent className="bg-white/10 dark:bg-black/10 backdrop-blur-md">
@@ -124,7 +110,7 @@ export default function StoreFilterSort({ stores = [], onLike, selectedStoreId, 
           value={sortBy}
           onValueChange={(value) => setSortBy(value)}
         >
-          <SelectTrigger className="hidden sm:block sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
+          <SelectTrigger className="hidden sm:inline-flex sm:w-1/6 h-9 px-3 py-2 text-sm dark:bg-zinc-900 dark:text-white bg-white text-gray-900 border">
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
           <SelectContent className="bg-white/10 dark:bg-black/10 backdrop-blur-md">
