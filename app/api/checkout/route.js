@@ -146,6 +146,7 @@ export async function POST(request) {
       customerNotes,
       shippingOption = 'door-to-door',
       lockerSelection,
+      shippingQuotes: clientShippingQuotes,
     } = body;
 
     const fulfillmentOption = shippingOption || 'door-to-door';
@@ -362,14 +363,20 @@ export async function POST(request) {
           console.log(`📝 Creating order for seller: ${orderData.sellerName}`);
           
           // Calculate costs for this seller's order
-          const shippingCost = calculateShipping(
-            orderData.items.map(item => ({
-              ...item,
-              weight: 0.5, // Default weight
-            })),
-            normalizedAddress,
-            resolvedShippingMethod
-          );
+          const shippingCost = (() => {
+            const clientBest = clientShippingQuotes?.bestBySeller?.[sellerId];
+            if (typeof clientBest === 'number' && !Number.isNaN(clientBest)) {
+              return clientBest;
+            }
+            return calculateShipping(
+              orderData.items.map(item => ({
+                ...item,
+                weight: 0.5, // Default weight
+              })),
+              normalizedAddress,
+              resolvedShippingMethod
+            );
+          })();
 
           const tax = orderData.subtotal * 0.15; // 15% VAT
           const total = orderData.subtotal + shippingCost + tax;

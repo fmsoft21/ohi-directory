@@ -84,6 +84,14 @@ const OrderCard = ({ order }) => {
               <span className="text-muted-foreground">Customer:</span>
               <span className="font-medium">{order.buyer?.storename || 'N/A'}</span>
             </div>
+
+            {order.trackingNumber && (
+              <div className="flex items-center gap-2 text-sm">
+                <Truck className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Tracking:</span>
+                <span className="font-mono text-xs">{order.trackingNumber}</span>
+              </div>
+            )}
             
             {order.shippingAddress && (
               <div className="flex items-start gap-2 text-sm">

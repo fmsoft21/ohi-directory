@@ -4,34 +4,8 @@ import Order from '@/models/Order';
 import Product from '@/models/Product';
 import User from '@/models/User';
 import { getSessionUser } from '@/utils/getSessionUser';
-
-// Helper function to trigger wallet webhook
-async function triggerWalletWebhook(order) {
-  try {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    
-    const response = await fetch(`${baseUrl}/api/orders/webhook`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        orderId: order._id.toString(),
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Wallet webhook failed:', await response.text());
-    } else {
-      console.log('✅ Wallet updated for order:', order.orderNumber);
-    }
-  } catch (error) {
-    console.error('Error triggering wallet webhook:', error);
-    // Don't throw - we don't want to fail the status update if webhook fails
-  }
-}
+import { getOrCreateWallet, calculatePlatformFee } from '@/utils/walletHelper';
+import { createShiplogicShipmentFromOrder } from '@/utils/courierServices';
 
 // Helper function to send email notifications
 async function sendStatusUpdateEmail(order, buyer, seller) {
@@ -178,8 +152,81 @@ export async function PUT(request, { params }) {
 
     await order.save();
 
-    // Trigger wallet webhook for financial updates
-    await triggerWalletWebhook(order);
+    // Inline wallet updates to avoid relying on outbound webhook calls
+    if (order.paymentStatus === 'paid') {
+      const wallet = await getOrCreateWallet(order.seller._id);
+
+      if (status === 'processing') {
+        const existingSaleTx = wallet.transactions.find(
+          t => t.order?.toString() === order._id.toString() && t.type === 'sale'
+        );
+        if (!existingSaleTx) {
+          const platformFee = calculatePlatformFee(order.subtotal);
+          await wallet.addTransaction({
+            type: 'sale',
+            amount: order.subtotal,
+            fee: platformFee,
+            status: 'pending',
+            description: `Order Sale - ${order.orderNumber}`,
+            order: order._id,
+            buyer: order.buyer,
+            paymentMethod: order.paymentMethod,
+            metadata: {
+              orderNumber: order.orderNumber,
+              source: 'order-status-processing',
+            },
+          });
+        }
+      }
+
+      if (status === 'delivered') {
+        const pendingTx = wallet.transactions.find(
+          t => t.order?.toString() === order._id.toString() && t.status === 'pending' && t.type === 'sale'
+        );
+        if (pendingTx) {
+          await wallet.completeTransaction(pendingTx._id);
+        }
+      }
+
+      if (status === 'cancelled') {
+        await wallet.addTransaction({
+          type: 'refund',
+          amount: -order.total,
+          fee: 0,
+          status: 'completed',
+          description: `Refund - ${order.orderNumber}`,
+          order: order._id,
+          buyer: order.buyer,
+          metadata: {
+            orderNumber: order.orderNumber,
+            reason: order.cancellationReason,
+          },
+        });
+      }
+    }
+
+    let trackingUpdated = false;
+
+    // Auto-create Shiplogic shipment when moving to processing and no tracking exists
+    if (status === 'processing' && order.paymentStatus === 'paid' && !order.trackingNumber) {
+      try {
+        const shipment = await createShiplogicShipmentFromOrder(order);
+        if (shipment?.trackingReference) {
+          order.trackingNumber = shipment.trackingReference;
+          order.courierProvider = 'shiplogic';
+          order.courierReference = shipment.shipmentId || shipment.trackingReference;
+          order.trackingUrl = shipment.labelUrl || order.trackingUrl;
+          trackingUpdated = true;
+        }
+      } catch (shipErr) {
+        console.error('Shiplogic shipment create failed:', shipErr.message);
+        // Do not block status update on shipment failure
+      }
+    }
+
+    if (trackingUpdated) {
+      await order.save();
+    }
 
     // Send email notifications
     await sendStatusUpdateEmail(order, order.buyer, order.seller);
@@ -196,6 +243,7 @@ export async function PUT(request, { params }) {
           trackingNumber: order.trackingNumber,
           trackingUrl: order.trackingUrl,
           courierProvider: order.courierProvider,
+          courierReference: order.courierReference,
           confirmedAt: order.confirmedAt,
           shippedAt: order.shippedAt,
           deliveredAt: order.deliveredAt,
@@ -307,7 +355,7 @@ export async function GET(request, { params }) {
     const order = await Order.findById(id)
       .populate('buyer', 'storename email')
       .populate('seller', 'storename email')
-      .select('orderNumber status statusHistory trackingNumber trackingUrl courierProvider shippedAt deliveredAt cancelledAt estimatedDelivery');
+      .select('orderNumber status statusHistory trackingNumber trackingUrl courierProvider courierReference shippedAt deliveredAt cancelledAt estimatedDelivery');
 
     if (!order) {
       return new Response(

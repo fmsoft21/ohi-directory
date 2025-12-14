@@ -260,7 +260,7 @@ const OrderSchema = new Schema(
     // Courier information
     courierProvider: {
       type: String,
-      enum: ['courier-guy', 'fastway', 'pudo', null],
+      enum: ['courier-guy', 'shiplogic', 'fastway', 'pudo', null],
     },
     courierReference: String,
     

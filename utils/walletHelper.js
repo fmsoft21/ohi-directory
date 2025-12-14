@@ -19,9 +19,9 @@ export async function getOrCreateWallet(sellerId) {
 }
 
 /**
- * Calculate platform fee (5% default)
+ * Calculate platform fee (15% default)
  */
-export function calculatePlatformFee(amount, feePercentage = 5) {
+export function calculatePlatformFee(amount, feePercentage = 15) {
   return (amount * feePercentage) / 100;
 }
 

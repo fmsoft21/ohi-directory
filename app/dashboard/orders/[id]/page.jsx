@@ -246,6 +246,45 @@ export default function OrderDetailPage() {
               </CardContent>
             </Card>
 
+            {order.trackingNumber && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-5 w-5" />
+                    Tracking
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Number:</span>
+                    <span className="font-mono text-xs">{order.trackingNumber}</span>
+                  </div>
+                  {order.courierProvider && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Courier:</span>
+                      <span className="font-medium">{order.courierProvider}</span>
+                    </div>
+                  )}
+                  {order.courierReference && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Reference:</span>
+                      <span className="font-mono text-xs">{order.courierReference}</span>
+                    </div>
+                  )}
+                  {order.trackingUrl && (
+                    <a
+                      className="text-indigo-600 hover:underline"
+                      href={order.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View live tracking
+                    </a>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Update Order (Seller Only) */}
             {isSeller && (
               <Card>

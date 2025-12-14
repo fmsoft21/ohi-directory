@@ -1,6 +1,7 @@
 // app/api/payment/verify/route.js
 import connectDB from '@/config/database';
 import Order from '@/models/Order';
+import { getOrCreateWallet, calculatePlatformFee } from '@/utils/walletHelper';
 
 export async function POST(request) {
   try {
@@ -50,13 +51,39 @@ export async function POST(request) {
           ...order.paymentDetails,
           paidAt: new Date(),
         };
-        order.status = 'confirmed';
+        // Align with ITN handler: move to processing and create wallet txn if missing
+        order.status = 'processing';
         order.confirmedAt = new Date();
         order.statusHistory.push({
-          status: 'confirmed',
+          status: 'processing',
           timestamp: new Date(),
           note: 'Payment confirmed via return URL',
         });
+
+        // Ensure seller wallet has the pending sale transaction
+        const wallet = await getOrCreateWallet(order.seller);
+        const existingSaleTx = wallet.transactions.find(
+          t => t.order?.toString() === order._id.toString() && t.type === 'sale'
+        );
+
+        if (!existingSaleTx) {
+          const platformFee = calculatePlatformFee(order.subtotal);
+          await wallet.addTransaction({
+            type: 'sale',
+            amount: order.subtotal,
+            fee: platformFee,
+            status: 'pending',
+            description: `Order Sale - ${order.orderNumber}`,
+            order: order._id,
+            buyer: order.buyer,
+            paymentMethod: order.paymentMethod,
+            metadata: {
+              orderNumber: order.orderNumber,
+              source: 'payment-verify-fallback',
+            },
+          });
+        }
+
         await order.save();
       }
     }

@@ -8,6 +8,7 @@ import {
   isPayFastSignatureRequired,
   isPayFastITNEnabled
 } from '@/utils/payfast';
+import { getOrCreateWallet, calculatePlatformFee } from '@/utils/walletHelper';
 
 /**
  * PayFast Instant Transaction Notification (ITN) handler
@@ -67,61 +68,103 @@ export async function POST(request) {
 
     // Extract data
     const {
-      m_payment_id, // order number
+      m_payment_id, // order number(s), may be comma-separated when multiple orders combined
       pf_payment_id,
       payment_status,
       amount_gross,
-      custom_str1, // order ID
+      custom_str1, // order IDs string from createPayFastPayment
     } = postData;
 
-    // Find order
-    const order = await Order.findOne({ orderNumber: m_payment_id });
+    // Normalise identifiers to support combined orders (comma/space separated)
+    const paymentIds = (m_payment_id || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const orderIdsFromCustom = (custom_str1 || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
 
-    if (!order) {
-      console.error('Order not found:', m_payment_id);
+    // Fetch matching orders by orderNumber or _id
+    const orders = await Order.find({
+      $or: [
+        paymentIds.length ? { orderNumber: { $in: paymentIds } } : null,
+        orderIdsFromCustom.length ? { _id: { $in: orderIdsFromCustom } } : null,
+      ].filter(Boolean),
+    });
+
+    if (!orders.length) {
+      console.error('Order(s) not found for PayFast ITN', { m_payment_id, custom_str1 });
       return new Response('Order not found', { status: 404 });
     }
 
-    // Verify amount
-    const expectedAmount = parseFloat(order.total.toFixed(2));
+    // Verify aggregated amount across all matched orders
+    const expectedAmount = parseFloat(
+      orders.reduce((sum, o) => sum + (o.total || 0), 0).toFixed(2)
+    );
     const receivedAmount = parseFloat(amount_gross);
 
     if (Math.abs(expectedAmount - receivedAmount) > 0.01) {
-      console.error('Amount mismatch:', { expected: expectedAmount, received: receivedAmount });
+      console.error('Amount mismatch:', { expected: expectedAmount, received: receivedAmount, m_payment_id });
       return new Response('Amount mismatch', { status: 400 });
     }
 
-    // Update order payment status
+    // Update each order and wallet
     const newPaymentStatus = parsePayFastStatus(payment_status);
-    
-    order.paymentStatus = newPaymentStatus;
-    order.paymentDetails = {
-      ...order.paymentDetails,
-      payfastPaymentId: m_payment_id,
-      payfastTransactionId: pf_payment_id,
-      paidAt: newPaymentStatus === 'paid' ? new Date() : null,
-    };
 
-    // Update order status if payment successful
-    if (newPaymentStatus === 'paid') {
-      order.status = 'processing';
-      order.statusHistory.push({
-        status: 'processing',
-        timestamp: new Date(),
-        note: 'Payment received',
-      });
-    } else if (newPaymentStatus === 'failed') {
-      order.status = 'cancelled';
-      order.statusHistory.push({
-        status: 'cancelled',
-        timestamp: new Date(),
-        note: 'Payment failed',
-      });
+    for (const order of orders) {
+      order.paymentStatus = newPaymentStatus;
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        payfastPaymentId: m_payment_id,
+        payfastTransactionId: pf_payment_id,
+        paidAt: newPaymentStatus === 'paid' ? new Date() : null,
+      };
+
+      if (newPaymentStatus === 'paid') {
+        order.status = 'processing';
+        order.statusHistory.push({
+          status: 'processing',
+          timestamp: new Date(),
+          note: 'Payment received',
+        });
+
+        // Create a pending wallet transaction for the seller (idempotent per order)
+        const wallet = await getOrCreateWallet(order.seller);
+        const existingSaleTx = wallet.transactions.find(
+          t => t.order?.toString() === order._id.toString() && t.type === 'sale'
+        );
+
+        if (!existingSaleTx) {
+          const platformFee = calculatePlatformFee(order.subtotal);
+          await wallet.addTransaction({
+            type: 'sale',
+            amount: order.subtotal,
+            fee: platformFee,
+            status: 'pending',
+            description: `Order Sale - ${order.orderNumber}`,
+            order: order._id,
+            buyer: order.buyer,
+            paymentMethod: order.paymentMethod,
+            metadata: {
+              orderNumber: order.orderNumber,
+              payfastPaymentId: m_payment_id,
+              payfastTransactionId: pf_payment_id,
+            },
+          });
+        }
+      } else if (newPaymentStatus === 'failed') {
+        order.status = 'cancelled';
+        order.statusHistory.push({
+          status: 'cancelled',
+          timestamp: new Date(),
+          note: 'Payment failed',
+        });
+      }
+
+      await order.save();
+      console.log('Order updated:', order.orderNumber, 'Status:', newPaymentStatus);
     }
-
-    await order.save();
-
-    console.log('Order updated:', order.orderNumber, 'Status:', newPaymentStatus);
 
     // Respond with success
     return new Response('OK', { status: 200 });

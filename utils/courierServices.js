@@ -710,3 +710,67 @@ export class CourierServiceManager {
     }
   }
 }
+
+// Create a Shiplogic shipment directly from an order document
+export async function createShiplogicShipmentFromOrder(order) {
+  const service = new CourierGuyService();
+
+  const serviceLevelCode = order?.courierQuote?.serviceCode || order?.courierQuote?.service_code || order?.courierQuote?.service_level_code || 'ECO';
+  const parcels = order?.parcelSummary?.parcels?.length ? order.parcelSummary.parcels : [{ description: 'Parcel', weightKg: 1 }];
+
+  const collectionAddress = {
+    type: 'residential',
+    company: order?.sellerName || order?.sellerAddressSnapshot?.company,
+    street_address: order?.sellerAddressSnapshot?.address,
+    local_area: order?.sellerAddressSnapshot?.local_area,
+    city: order?.sellerAddressSnapshot?.city,
+    zone: order?.sellerAddressSnapshot?.province,
+    code: order?.sellerAddressSnapshot?.zipCode,
+    country: order?.sellerAddressSnapshot?.country || 'ZA',
+    email: order?.sellerAddressSnapshot?.email,
+    phone: order?.sellerAddressSnapshot?.phone,
+    name: order?.sellerAddressSnapshot?.name || order?.sellerName,
+  };
+
+  const deliveryAddress = {
+    type: 'residential',
+    company: order?.shippingAddress?.company,
+    street_address: order?.shippingAddress?.address,
+    local_area: order?.shippingAddress?.apartment,
+    city: order?.shippingAddress?.city,
+    zone: order?.shippingAddress?.province,
+    code: order?.shippingAddress?.zipCode,
+    country: order?.shippingAddress?.country || 'ZA',
+    email: order?.shippingAddress?.email,
+    phone: order?.shippingAddress?.phone,
+    name: order?.shippingAddress?.fullName,
+  };
+
+  const shipmentPayload = {
+    collectionAddress,
+    collectionContact: collectionAddress,
+    deliveryAddress,
+    deliveryContact: deliveryAddress,
+    parcels,
+    declaredValue: order?.total || order?.subtotal || 0,
+    collectionDate: order?.confirmedAt || order?.createdAt,
+    deliveryDate: order?.estimatedDelivery,
+    collectionNotes: order?.pickupInstructions,
+    deliveryNotes: order?.deliveryInstructions,
+    orderNumber: order?.orderNumber,
+    muteNotifications: false,
+  };
+
+  const response = await service.createShipment(shipmentPayload, { service_level_code: serviceLevelCode });
+
+  const trackingReference = response?.short_tracking_reference || response?.tracking_reference || response?.tracking_reference_number;
+
+  return {
+    raw: response,
+    trackingReference,
+    shipmentId: response?.id || response?.shipment_id,
+    parcelTrackingReferences: response?.parcel_tracking_references,
+    serviceLevelCode,
+    labelUrl: response?.label_url || response?.label || null,
+  };
+}

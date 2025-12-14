@@ -585,6 +585,15 @@ export default function CheckoutPage() {
         lockerSelected: Boolean(lockerSelection),
       });
 
+      const bestBySeller = shippingQuotes.data?.quotesBySeller
+        ? Object.values(shippingQuotes.data.quotesBySeller).reduce((acc, seller) => {
+            if (seller?.sellerId && typeof seller?.bestQuote?.price === 'number') {
+              acc[seller.sellerId] = Number(seller.bestQuote.price);
+            }
+            return acc;
+          }, {})
+        : undefined;
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 
@@ -596,6 +605,7 @@ export default function CheckoutPage() {
           shippingMethod,
           shippingOption,
           lockerSelection,
+          shippingQuotes: bestBySeller ? { bestBySeller, estimatedShipping: shippingQuotes.data?.summary?.estimatedShipping } : undefined,
           paymentMethod: formData.paymentMethod,
           customerNotes: formData.customerNotes.trim(),
         }),
